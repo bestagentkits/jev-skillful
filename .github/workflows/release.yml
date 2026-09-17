@@ -40,7 +40,7 @@ jobs:
       # only defence a consumer has against a tampered artefact.
       - name: Publish with provenance
         run: |
-          pnpm --filter skillful publish \
+          pnpm --filter @mrgoonie/skillful publish \
             --provenance --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
           body: |
             See CHANGELOG.md for what changed.
 
-            Install: `npx skillful install`
+            Install: `npx @mrgoonie/skillful install`
 
             Skillful reads `TYPESAFE_API_KEY` from the
             environment and never stores it. It makes exactly one

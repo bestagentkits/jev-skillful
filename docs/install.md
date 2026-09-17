@@ -14,7 +14,7 @@ installed is relevant, and injects at most one primary suggestion plus two runne
 ## Install the hook
 
 ```bash
-npx skillful install
+npx @mrgoonie/skillful install
 ```
 
 The command detects which runtimes are present and installs for each. Only the runtimes whose

@@ -6,7 +6,7 @@ the router is measured against, and a fixture set grows best from real prompts t
 ## Reporting a bad routing decision
 
 ```bash
-npx skillful export-case --prompt "the prompt that routed wrong"
+npx @mrgoonie/skillful export-case --prompt "the prompt that routed wrong"
 ```
 
 The output is redacted before it is written: filesystem paths, environment values whose names look
@@ -30,7 +30,7 @@ pnpm test
 of:
 
 ```bash
-npx skillful eval --replay bench/replay/routing.json --repeat 5 --json
+npx @mrgoonie/skillful eval --replay bench/replay/routing.json --repeat 5 --json
 ```
 
 before and after. The CI eval gate runs the same comparison, but numbers in the PR body save a
@@ -53,7 +53,7 @@ and reports are all committed. Project names, infrastructure URLs, absolute home
 usernames must not appear. Before committing anything derived from a catalog:
 
 ```bash
-npx skillful eval --snapshot-corpus bench/corpus/distractors.json
+npx @mrgoonie/skillful eval --snapshot-corpus bench/corpus/distractors.json
 git diff bench/corpus/distractors.json
 ```
 

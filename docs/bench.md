@@ -25,7 +25,7 @@ Two of the four supported runtimes cannot complete a headless run on the develop
 Check yours with:
 
 ```bash
-npx skillful bench --probe
+npx @mrgoonie/skillful bench --probe
 ```
 
 The probe runs a real prompt rather than checking for a binary on `PATH`, because a binary whose
@@ -157,16 +157,16 @@ uninformative rather than null. Zero would read as perfect sensitivity.
 
 ```bash
 # Which runtimes can actually run?
-npx skillful bench --probe
+npx @mrgoonie/skillful bench --probe
 
 # Pick the candidate set. The tasks must come from a real dataset.
-npx skillful bench --suite bench/suites/core/suite.json --dry-run
+npx @mrgoonie/skillful bench --suite bench/suites/core/suite.json --dry-run
 
 # Control arm only, to classify each candidate.
-npx skillful bench --suite bench/suites/core/suite.json --pilot
+npx @mrgoonie/skillful bench --suite bench/suites/core/suite.json --pilot
 
 # Both arms over the screened suite.
-npx skillful bench --suite bench/suites/core/suite.json --arms control,treatment --repeat 3
+npx @mrgoonie/skillful bench --suite bench/suites/core/suite.json --arms control,treatment --repeat 3
 ```
 
 The suite on disk holds 8 real SWE-bench Verified instances and loads through the same code path any

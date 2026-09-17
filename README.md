@@ -5,7 +5,7 @@ server, subagent or slash command you already have installed is relevant, and in
 suggestion into the agent's context.
 
 ```bash
-npx skillful install
+npx @mrgoonie/skillful install
 ```
 
 You bring your own `TYPESAFE_API_KEY`. There is no server, no account, and nothing is collected.
@@ -119,15 +119,15 @@ number fell to its honest value. A retrieval result that depends on a leaked URL
 ## Commands
 
 ```bash
-npx skillful install              # install the hook for every runtime present
-npx skillful doctor               # is it working? includes a live trial route
-npx skillful uninstall            # remove it, leaving other hooks alone
+npx @mrgoonie/skillful install              # install the hook for every runtime present
+npx @mrgoonie/skillful doctor               # is it working? includes a live trial route
+npx @mrgoonie/skillful uninstall            # remove it, leaving other hooks alone
 
-npx skillful catalog --summary    # what capabilities were found
-npx skillful route --prompt "..." --explain   # the decision, with the shortlist and scores
-npx skillful eval --recall-only   # sweep quotas offline, no key and no cost
-npx skillful eval --replay FILE   # score against recorded responses, no key
-npx skillful export-case --prompt "..."   # a redacted case to paste in an issue
+npx @mrgoonie/skillful catalog --summary    # what capabilities were found
+npx @mrgoonie/skillful route --prompt "..." --explain   # the decision, with the shortlist and scores
+npx @mrgoonie/skillful eval --recall-only   # sweep quotas offline, no key and no cost
+npx @mrgoonie/skillful eval --replay FILE   # score against recorded responses, no key
+npx @mrgoonie/skillful export-case --prompt "..."   # a redacted case to paste in an issue
 ```
 
 ## Privacy

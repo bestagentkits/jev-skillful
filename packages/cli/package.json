@@ -1,5 +1,5 @@
 {
-  "name": "skillful",
+  "name": "@mrgoonie/skillful",
   "version": "0.2.0",
   "type": "module",
   "description": "Per-prompt capability router for coding agents. Injects at most one relevant skill, MCP server, subagent or command into your agent's context.",

@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Start with `npx skillful doctor`. It reports whether a key
+        Start with `npx @mrgoonie/skillful doctor`. It reports whether a key
         is present, which runtimes have a hook, how many
         capabilities were found, and it runs one real route so you
         can see the latency. Its output answers most of these
@@ -16,7 +16,7 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: Output of `npx skillful doctor`
+      label: Output of `npx @mrgoonie/skillful doctor`
       description: |
         This is redacted by construction: it prints configuration
         sources, counts, and the one line that would be injected.
@@ -53,7 +53,7 @@ body:
     id: version
     attributes:
       label: Skillful version
-      description: Output of `npx skillful --version`.
+      description: Output of `npx @mrgoonie/skillful --version`.
     validations:
       required: true
 

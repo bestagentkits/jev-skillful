@@ -39,7 +39,7 @@ export function describeDegraded(reason: DegradedReason): string {
  * degraded route is already a case where we know nothing useful about the task.
  */
 export const DEGRADED_REMINDER =
-  "[skillful] Could not resolve a capability suggestion. If this task needs a specialist skill or MCP server, run: npx skillful";
+  "[skillful] Could not resolve a capability suggestion. If this task needs a specialist skill or MCP server, run: npx @mrgoonie/skillful";
 
 /** The reminder text to inject for a reason that prevented a decision. */
 export function degradedReminder(): string {

@@ -486,7 +486,7 @@ describe("runner", () => {
   it("degrades to a reminder when no key is configured, without throwing", async () => {
     const outcome = await runHook({ prompt: "refactor the auth middleware" }, deps(makeHome(), {}));
     expect(outcome.degraded).toBe(true);
-    expect(outcome.payload.hookSpecificOutput?.additionalContext).toContain("npx skillful");
+    expect(outcome.payload.hookSpecificOutput?.additionalContext).toContain("npx @mrgoonie/skillful");
   });
 
   it("injects nothing for an empty prompt", async () => {

@@ -3,7 +3,7 @@
 Start with:
 
 ```bash
-npx skillful doctor
+npx @mrgoonie/skillful doctor
 ```
 
 It reports whether the hook is enabled, whether a key is present, which runtimes have a hook, how
@@ -19,7 +19,7 @@ Work down this list.
    the one your agent runs in has no effect.
 
 2. **Is the hook installed?** `doctor` prints one line per runtime. `present, no hook` means run
-   `npx skillful install`.
+   `npx @mrgoonie/skillful install`.
 
 3. **Is it disabled?** `SKILLFUL_DISABLE=1` short-circuits the hook before any work. `doctor`
    reports it as a warning rather than a failure, because it is a legitimate setting.
@@ -59,7 +59,7 @@ cache's lifetime. Recovery is immediate once the cause is fixed.
 Run the same decision path with the internals visible:
 
 ```bash
-npx skillful route --prompt "your prompt" --explain
+npx @mrgoonie/skillful route --prompt "your prompt" --explain
 ```
 
 This prints the shortlist, the BM25 score for each candidate, and the model's ranking. The two
@@ -122,7 +122,7 @@ immediately. A stale decision that survives a catalog change is a bug.
 ## The catalog is empty or too small
 
 ```bash
-npx skillful catalog --summary
+npx @mrgoonie/skillful catalog --summary
 ```
 
 A zero count usually means the scanner looked somewhere your capabilities are not. It reads

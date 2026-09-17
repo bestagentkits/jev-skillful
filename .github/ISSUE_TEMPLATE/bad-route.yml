@@ -13,7 +13,7 @@ body:
         Before filling this in, run:
 
         ```bash
-        npx skillful export-case --prompt "the prompt that routed wrong"
+        npx @mrgoonie/skillful export-case --prompt "the prompt that routed wrong"
         ```
 
         It prints the decision, the shortlist and the scores, with
@@ -46,7 +46,7 @@ body:
     id: version
     attributes:
       label: Skillful version
-      description: Output of `npx skillful --version`.
+      description: Output of `npx @mrgoonie/skillful --version`.
     validations:
       required: true
 

@@ -8,7 +8,7 @@
 For a change to routing, retrieval, thresholds, or fixtures, this section is required.
 Paste the before and after of:
 
-    npx skillful eval --replay bench/replay/routing.json --repeat 5 --json
+    npx @mrgoonie/skillful eval --replay bench/replay/routing.json --repeat 5 --json
 
 The CI eval gate runs the same comparison, but a number in the PR body saves a review round trip
 and shows the change was measured rather than assumed.
