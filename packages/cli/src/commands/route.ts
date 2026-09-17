@@ -78,6 +78,7 @@ export async function routeCommand(options: RouteCommandOptions): Promise<number
     thresholds: resolved.config.thresholds,
     quotaGroups: resolved.config.quotaGroups,
     model: resolved.config.model,
+    baseUrl: resolved.config.baseUrl,
     uploadPrompt: options.uploadPrompt ?? resolved.config.uploadPrompt,
   });
 

@@ -103,6 +103,15 @@ export interface RouteOptions {
   quotaGroups?: readonly QuotaGroup[];
   model?: string;
   /**
+   * Override the API base URL.
+   *
+   * Without this, `resolveConfig` computed a `baseUrl` that no caller ever forwarded, so the
+   * config file's `baseUrl` and `SKILLFUL_BASE_URL` were resolved, reported by `--explain`, and
+   * then silently discarded. A setting that is read and ignored is worse than one that does not
+   * exist, because it looks like it works.
+   */
+  baseUrl?: string;
+  /**
    * When false, only the catalog is sent and the prompt text is withheld.
    *
    * The user's prompt still determines the shortlist locally, so this trades retrieval
@@ -205,6 +214,7 @@ export async function route(prompt: string, options: RouteOptions): Promise<Rout
       { state: request.state, model, questions: request.questions },
       {
         ...options.jev,
+        ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
         requestTimeoutMs: Math.min(thresholds.requestTimeoutMs, budgetLeft),
         signal: controller.signal,
       },

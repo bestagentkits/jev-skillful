@@ -137,3 +137,68 @@ A second lesson from the same episode: the language server was correct, and call
 "stale cache" was wrong three times. When editor diagnostics and the compiler disagree, neither side is
 presumed right — the disagreement has to be explained, and here the explanation was a real resolution
 gap rather than a tool defect.
+
+## Runtime hooks
+
+Two mechanisms cover four runtimes, because two pairs of runtimes share a contract:
+
+| Runtime | File | Mechanism |
+|---|---|---|
+| Claude Code | `~/.claude/settings.json` | `hooks.UserPromptSubmit`, command hook |
+| Codex | `~/.codex/hooks.json` | `hooks.UserPromptSubmit`, command hook |
+| Pi | `~/.pi/agent/extensions/skillful/index.ts` | extension, `before_agent_start` |
+| OMP | `~/.omp/agent/extensions/skillful/index.ts` | extension, `before_agent_start` |
+
+The two extension runtimes share one generated file, which forwards the prompt to `skillful hook`
+on a child process. That keeps one implementation of routing, caching, budgeting and rendering —
+the CLI's — serving all four runtimes instead of a second one that would drift from the first.
+
+### Where Codex reads hooks from, and how it was settled
+
+Two candidate locations existed, so both were inspected and one was probed by running the agent.
+
+- `~/.codex/hooks.json` holds real hook definitions. `hooks.UserPromptSubmit` is an array of
+  `{matcher, hooks: [{type, command, commandWindows}]}`, the same shape Claude Code uses.
+- `~/.codex/config.toml` has a `[hooks]` table whose only child is `[hooks.state]` — a ledger of
+  `path -> trusted_hash` covering twenty-five entries. It records which hook scripts Codex has been
+  told to trust. It defines no hooks.
+
+A temporary entry appended to `hooks.json` produced `hook: UserPromptSubmit` lines in Codex's own
+output, so that file is read and its hooks run. The probe also surfaced a caveat the installer
+reports rather than hides: the probe command did not itself execute, while the pre-existing hooks —
+all `.cjs` files under `~/.codex/hooks/` with a `trusted_hash` recorded in `config.toml` — did. The
+installer therefore writes into `hooks.json` and documents the trust step, and deliberately does not
+fabricate a `trusted_hash` to authorise its own code inside another tool's security model.
+
+The probe run also revealed that this machine's Codex quota is exhausted until 2026-09-19, which
+blocks a full agent-session verification of that runtime for now. The install itself is verified; a
+live Codex session receiving an injection is not.
+
+### Measured hook behaviour
+
+Live, on this machine, with the real catalog:
+
+| Check | Result |
+|---|---|
+| Cold route through `skillful hook` | 1446ms, inside the 2000ms budget |
+| Same prompt again, cache hit | 221ms, byte-identical output |
+| Trivial prompt (`thanks!`) | `{}` — nothing injected |
+| Invalid API key | reminder line, exit 0 |
+| Network unreachable, cache miss | reminder line, exit 0 |
+| Budget exhausted (`SKILLFUL_BUDGET_MS=1`) | reminder line, exit 0 |
+
+Two defects were found by these checks rather than by the test suite, and both are worth recording
+because neither would have been caught by a unit test that trusted the code's own assumptions.
+
+The first: `resolveConfig` computed a `baseUrl` from the config file and from `SKILLFUL_BASE_URL`,
+reported its source in `--explain`, and no caller ever forwarded it to the Jev client. The setting
+was read and discarded, across every command, since phase 2. It was found because a test that set
+`SKILLFUL_BASE_URL` to an unreachable address still returned a correct answer — the request had gone
+to the real service. A setting that is resolved and ignored is worse than one that does not exist,
+because it looks like it works.
+
+The second: uninstall left an emptied `hooks.UserPromptSubmit: []` behind. Uninstall is required to
+leave the configuration as it was found, and an empty array is a visible trace in a diff that would
+also survive into the next install. Emptied containers are now pruned, and a file that held nothing
+but the Skillful hook is removed.
+

@@ -136,3 +136,53 @@ export type { SweepGrid, SweepOptions, SweepPoint } from "./eval/sweep.js";
 // ---------------------------------------------------------------------------
 export { defaultConfigPath, resolveConfig } from "./config/resolve.js";
 export type { ConfigSource, ResolvedConfig, ResolveConfigInput, SkillfulConfig } from "./config/resolve.js";
+
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
+export { detectRuntimes, presentRuntimes, runtimeLocations } from "./hooks/detect.js";
+export type { DetectedRuntime, RuntimeLocation } from "./hooks/detect.js";
+export {
+  backupFile,
+  ensureDir,
+  isSkillfulCommand,
+  isSkillfulEntry,
+  readJsonFile,
+  removeSkillfulEntries,
+  SKILLFUL_HOOK_MARKER,
+  upsertSkillfulEntry,
+  writeJsonAtomic,
+} from "./hooks/json-merge.js";
+export type { HookCommand, HookEntry, JsonReadResult } from "./hooks/json-merge.js";
+export {
+  cacheGet,
+  cacheSet,
+  CACHE_VERSION,
+  DEFAULT_MAX_ENTRIES,
+  DEFAULT_TTL_MS,
+  emptyCache,
+  loadCache,
+  normalisePrompt,
+  pruneCache,
+  routeCacheKey,
+  saveCache,
+} from "./hooks/cache.js";
+export type { CacheStore, CachedRoute } from "./hooks/cache.js";
+export { DEGRADED_REMINDER, degradedReminder, describeDegraded, isBenignSkip } from "./hooks/degrade.js";
+export { DEFAULT_MAX_CHARS, DEFAULT_MAX_RUNNERS_UP, INJECTION_PREFIX, renderInjection } from "./hooks/render.js";
+export type { RenderOptions } from "./hooks/render.js";
+export { DISABLE_ENV, injectionPayload, isDisabled, runHook } from "./hooks/runner.js";
+export type { HookDeps, HookInput, HookOutcome, HookPayload } from "./hooks/runner.js";
+export {
+  buildInstallContext,
+  hookStatus,
+  installHooks,
+  uninstallHooks,
+} from "./hooks/install.js";
+export type { HookStatus, InstallSummary, UninstallSummary } from "./hooks/install.js";
+export { installClaudeCode, uninstallClaudeCode } from "./hooks/installers/claude-code.js";
+export { installCodex, uninstallCodex } from "./hooks/installers/codex.js";
+export { installPi, uninstallPi } from "./hooks/installers/pi.js";
+export { installOmp, uninstallOmp } from "./hooks/installers/omp.js";
+export { extensionSource } from "./hooks/installers/extension-source.js";
+export type { InstallContext, InstallOutcome, UninstallOutcome } from "./hooks/installers/types.js";

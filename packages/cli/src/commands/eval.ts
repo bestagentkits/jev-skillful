@@ -160,6 +160,7 @@ export async function evalCommand(options: EvalCommandOptions): Promise<number> 
     thresholds: resolved.config.thresholds,
     quotaGroups: resolved.config.quotaGroups,
     model: resolved.config.model,
+    baseUrl: resolved.config.baseUrl,
     uploadPrompt: resolved.config.uploadPrompt,
   };
 

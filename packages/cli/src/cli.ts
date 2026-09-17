@@ -1,15 +1,31 @@
 import { CATALOG_KINDS, CATALOG_RUNTIMES } from "./core/index.js";
 import type { CatalogKind, CatalogRuntime } from "./core/index.js";
 import { catalogCommand } from "./commands/catalog.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { evalCommand } from "./commands/eval.js";
+import { hookCommand } from "./commands/hook.js";
+import { installCommand, uninstallCommand } from "./commands/install.js";
 import { routeCommand } from "./commands/route.js";
 
 const USAGE = `skillful — capability router for coding agents
 
 Usage:
+  skillful install [options]        Install the hook for every agent runtime present
+  skillful uninstall [options]      Remove the Skillful hook, leaving other hooks alone
+  skillful doctor [options]         Report whether the hook actually works
+  skillful hook                      Hook entry point. Reads event JSON on stdin
   skillful catalog [options]        List every capability found on this machine
   skillful route --prompt <text>    Decide which capability a prompt needs
   skillful eval [options]           Score the router against an eval fixture set
+
+Install options:
+  --runtime <runtime>    Only install for these runtimes (repeatable)
+  --dry-run              Report what would change without writing anything
+  --json                 Emit machine-readable JSON
+
+Doctor options:
+  --offline              Skip the live route trial (no key or network needed)
+  --json                 Emit machine-readable JSON
 
 Catalog options:
   --json                 Emit machine-readable JSON
@@ -67,6 +83,43 @@ export async function run(argv: readonly string[]): Promise<number> {
   if (command === "--version" || command === "version") {
     process.stdout.write(`${VERSION}\n`);
     return 0;
+  }
+
+  if (command === "install" || command === "uninstall") {
+    const parsed = parseInstallFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    const options = {
+      json: parsed.json,
+      dryRun: parsed.dryRun,
+      ...(parsed.runtimes.length === 0 ? {} : { runtimes: parsed.runtimes }),
+    };
+    return command === "install" ? installCommand(options) : uninstallCommand(options);
+  }
+
+  if (command === "doctor") {
+    const parsed = parseDoctorFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    return doctorCommand({ json: parsed.json, offline: parsed.offline });
+  }
+
+  if (command === "hook") {
+    // No flags and no error path. This command is called by an agent runtime on every prompt,
+    // so it always exits 0 and always writes exactly one JSON object to stdout.
+    return hookCommand({ stdin: await readStdinRaw() });
   }
 
   if (command === "catalog") {
@@ -135,6 +188,22 @@ export async function run(argv: readonly string[]): Promise<number> {
 
   process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
   return 1;
+}
+
+/**
+ * Read stdin verbatim, without the trimming `readStdin` does for prompts.
+ *
+ * The hook parses its own JSON envelope, and a caller that piped a valid document must be able
+ * to hand it over unmodified.
+ */
+async function readStdinRaw(): Promise<string> {
+  if (process.stdin.isTTY === true) return "";
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : (chunk as Buffer));
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 /**
@@ -316,6 +385,75 @@ function parseEvalFlags(argv: readonly string[]): ParsedEvalFlags {
   if (out.record !== undefined && out.replay !== undefined) {
     out.error = "--record and --replay cannot be used together";
   }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// install / uninstall / doctor
+// ---------------------------------------------------------------------------
+
+interface ParsedInstallFlags {
+  json: boolean;
+  dryRun: boolean;
+  runtimes: CatalogRuntime[];
+  help: boolean;
+  error?: string;
+}
+
+function parseInstallFlags(argv: readonly string[]): ParsedInstallFlags {
+  const out: ParsedInstallFlags = { json: false, dryRun: false, runtimes: [], help: false };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
+
+    if (arg === "--json") {
+      out.json = true;
+    } else if (arg === "--dry-run") {
+      out.dryRun = true;
+    } else if (arg === "-h" || arg === "--help") {
+      out.help = true;
+    } else if (arg === "--runtime") {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        out.error = `Missing value for ${arg}`;
+        return out;
+      }
+      i += 1;
+      const rejected = addRuntime(out.runtimes, value);
+      if (rejected !== null) {
+        out.error = rejected;
+        return out;
+      }
+    } else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
+  return out;
+}
+
+interface ParsedDoctorFlags {
+  json: boolean;
+  offline: boolean;
+  help: boolean;
+  error?: string;
+}
+
+function parseDoctorFlags(argv: readonly string[]): ParsedDoctorFlags {
+  const out: ParsedDoctorFlags = { json: false, offline: false, help: false };
+
+  for (const arg of argv) {
+    if (arg === "--json") out.json = true;
+    else if (arg === "--offline") out.offline = true;
+    else if (arg === "-h" || arg === "--help") out.help = true;
+    else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
   return out;
 }
 

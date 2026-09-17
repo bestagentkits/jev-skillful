@@ -25,6 +25,7 @@ export type RouteCaller = (
     thresholds: Partial<RouteThresholds>;
     quotaGroups: readonly QuotaGroup[];
     model: string;
+    baseUrl?: string;
     uploadPrompt: boolean;
   },
 ) => Promise<RouteResult>;
@@ -33,6 +34,8 @@ export interface EvalConfig {
   thresholds: Partial<RouteThresholds>;
   quotaGroups: readonly QuotaGroup[];
   model: string;
+  /** Forwarded to the Jev client. Without it, `SKILLFUL_BASE_URL` is silently ignored. */
+  baseUrl?: string;
   uploadPrompt: boolean;
 }
 
@@ -76,6 +79,7 @@ const liveRouteCaller: RouteCaller = (prompt, options) =>
     thresholds: options.thresholds,
     quotaGroups: options.quotaGroups,
     model: options.model,
+    ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
     uploadPrompt: options.uploadPrompt,
     // The api key comes from the environment inside the client; nothing extra is needed.
   });
