@@ -46,6 +46,26 @@ describe("resolveConfig", () => {
     expect(defaultConfigPath("/home/x")).toBe("/home/x/.config/skillful/config.json");
   });
 
+  it("resolves the winner-probability floor independently of noneThreshold", () => {
+    // These were one number, and separating them is the point of the fix. A config that moves
+    // one must not silently move the other.
+    const resolved = withoutFile({ env: { SKILLFUL_MIN_WINNER_PROBABILITY: "0.1" } });
+
+    expect(resolved.config.thresholds.minWinnerProbability).toBe(0.1);
+    expect(resolved.config.thresholds.noneThreshold).toBe(DEFAULT_THRESHOLDS.noneThreshold);
+    expect(resolved.sources["minWinnerProbability"]).toBe("env");
+    expect(resolved.sources["noneThreshold"]).toBe("default");
+  });
+
+  it("lets a CLI flag set the winner-probability floor", () => {
+    const resolved = withoutFile({
+      cli: { thresholds: { minWinnerProbability: 0.05 } },
+    });
+
+    expect(resolved.config.thresholds.minWinnerProbability).toBe(0.05);
+    expect(resolved.sources["minWinnerProbability"]).toBe("cli");
+  });
+
   it("lets the environment override a default", () => {
     const resolved = withoutFile({ env: { SKILLFUL_BUDGET_MS: "5000" } });
 

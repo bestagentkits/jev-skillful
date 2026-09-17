@@ -18,6 +18,8 @@ export interface SweepGrid {
   skillQuota: number[];
   /** Values for `runnerUpThreshold`, swept only when supplied. */
   runnerUpThreshold?: number[];
+  /** Values for the winner-probability floor, swept only when supplied. */
+  minWinnerProbability?: number[];
 }
 
 export const DEFAULT_SWEEP_GRID: SweepGrid = {
@@ -28,6 +30,7 @@ export const DEFAULT_SWEEP_GRID: SweepGrid = {
 export interface SweepPoint {
   noneThreshold: number;
   skillQuota: number;
+  minWinnerProbability: number;
   runnerUpThreshold?: number;
   report: EvalReport;
   gate: GateResult;
@@ -86,56 +89,64 @@ export async function runSweep(options: SweepOptions): Promise<SweepPoint[]> {
   const grid = options.grid ?? DEFAULT_SWEEP_GRID;
   const points: SweepPoint[] = [];
   const runnerUpValues = grid.runnerUpThreshold ?? [undefined];
-  const total = grid.noneThreshold.length * grid.skillQuota.length * runnerUpValues.length;
+  const winnerFloorValues = grid.minWinnerProbability ?? [
+    options.baseConfig.thresholds.minWinnerProbability ?? 0.25,
+  ];
+  const total =
+    grid.noneThreshold.length * grid.skillQuota.length * runnerUpValues.length * winnerFloorValues.length;
 
   let done = 0;
   let passed: SweepPoint | undefined;
 
   for (const skillQuota of grid.skillQuota) {
     for (const noneThreshold of grid.noneThreshold) {
-      for (const runnerUpThreshold of runnerUpValues) {
-        if (options.stopOnPass === true && passed !== undefined) break;
+      for (const minWinnerProbability of winnerFloorValues) {
+        for (const runnerUpThreshold of runnerUpValues) {
+          if (options.stopOnPass === true && passed !== undefined) break;
 
-        const thresholds = {
-          ...options.baseConfig.thresholds,
-          noneThreshold,
-          ...(runnerUpThreshold === undefined ? {} : { runnerUpThreshold }),
-        };
+          const thresholds = {
+            ...options.baseConfig.thresholds,
+            noneThreshold,
+            minWinnerProbability,
+            ...(runnerUpThreshold === undefined ? {} : { runnerUpThreshold }),
+          };
 
-        const report = await runEval({
-          fixtures: options.fixtures,
-          entries: options.entries,
-          repeat: options.repeat,
-          config: {
-            ...options.baseConfig,
-            thresholds,
-            quotaGroups: options.quotaGroupsFor(skillQuota),
-          },
-          ...(options.callRoute === undefined ? {} : { callRoute: options.callRoute }),
-        });
+          const report = await runEval({
+            fixtures: options.fixtures,
+            entries: options.entries,
+            repeat: options.repeat,
+            config: {
+              ...options.baseConfig,
+              thresholds,
+              quotaGroups: options.quotaGroupsFor(skillQuota),
+            },
+            ...(options.callRoute === undefined ? {} : { callRoute: options.callRoute }),
+          });
 
-        const gate = evaluateGate(report, options.criteria);
-        const point: SweepPoint = {
-          noneThreshold,
-          skillQuota,
-          ...(runnerUpThreshold === undefined ? {} : { runnerUpThreshold }),
-          report,
-          gate,
-          summary: {
-            recallAtK: report.aggregate.retrieval.recallAtK,
-            top1Accuracy: report.aggregate.decision.top1Accuracy,
-            noneRecall: report.aggregate.decision.noneRecall,
-            noneF1: report.aggregate.decision.noneF1,
-            agreementRate: report.aggregate.stability.agreementRate,
-            p95: report.aggregate.latency.p95,
-            passed: gate.passed,
-          },
-        };
+          const gate = evaluateGate(report, options.criteria);
+          const point: SweepPoint = {
+            noneThreshold,
+            skillQuota,
+            minWinnerProbability,
+            ...(runnerUpThreshold === undefined ? {} : { runnerUpThreshold }),
+            report,
+            gate,
+            summary: {
+              recallAtK: report.aggregate.retrieval.recallAtK,
+              top1Accuracy: report.aggregate.decision.top1Accuracy,
+              noneRecall: report.aggregate.decision.noneRecall,
+              noneF1: report.aggregate.decision.noneF1,
+              agreementRate: report.aggregate.stability.agreementRate,
+              p95: report.aggregate.latency.p95,
+              passed: gate.passed,
+            },
+          };
 
-        points.push(point);
-        done += 1;
-        options.onPoint?.(point, done, total);
-        if (gate.passed) passed ??= point;
+          points.push(point);
+          done += 1;
+          options.onPoint?.(point, done, total);
+          if (gate.passed) passed ??= point;
+        }
       }
     }
   }
@@ -168,12 +179,12 @@ export function renderSweep(report: {
   lines.push("");
 
   lines.push(
-    "| noneThreshold | skillQuota | recall@K | top1 | noneRecall | noneF1 | agreement | p95 | gate |",
+    "| noneThreshold | skillQuota | minWinnerP | recall@K | top1 | noneRecall | noneF1 | agreement | p95 | gate |",
   );
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const point of report.points) {
     lines.push(
-      `| ${point.noneThreshold} | ${point.skillQuota} | ${point.summary.recallAtK.toFixed(3)} | ` +
+      `| ${point.noneThreshold} | ${point.skillQuota} | ${point.minWinnerProbability} | ${point.summary.recallAtK.toFixed(3)} | ` +
         `${point.summary.top1Accuracy.toFixed(3)} | ${point.summary.noneRecall.toFixed(3)} | ` +
         `${point.summary.noneF1.toFixed(3)} | ${point.summary.agreementRate.toFixed(3)} | ` +
         `${point.summary.p95}ms | ${point.summary.passed ? "pass" : "fail"} |`,
@@ -184,7 +195,9 @@ export function renderSweep(report: {
   const best = report.points[0];
   if (best !== undefined) {
     lines.push("## Selected configuration", "");
-    lines.push(`noneThreshold ${best.noneThreshold}, skill quota ${best.skillQuota}`);
+    lines.push(
+      `noneThreshold ${best.noneThreshold}, skill quota ${best.skillQuota}, minWinnerProbability ${best.minWinnerProbability}`,
+    );
     lines.push("");
     const failing = best.gate.checks.filter((check) => !check.ok);
     if (failing.length > 0) {

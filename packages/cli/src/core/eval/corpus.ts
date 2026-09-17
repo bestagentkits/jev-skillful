@@ -167,10 +167,14 @@ export function sanitiseCorpus(entries: readonly CatalogEntry[]): {
     if (!isPublicSafe(entry)) continue;
 
     const description = redactInfrastructure(entry.description);
+    const whenToUse = entry.whenToUse === undefined
+      ? undefined
+      : redactInfrastructure(entry.whenToUse);
     const sourcePath = collapseHomePrefix(entry.sourcePath);
     const changed =
       description !== entry.description ||
       sourcePath !== entry.sourcePath ||
+      whenToUse !== entry.whenToUse ||
       entry.meta !== undefined;
     if (changed) redactedCount += 1;
 
@@ -185,6 +189,7 @@ export function sanitiseCorpus(entries: readonly CatalogEntry[]): {
       scope: entry.scope,
       sourcePath,
     };
+    if (whenToUse !== undefined) next.whenToUse = whenToUse;
     if (entry.degraded !== undefined) next.degraded = entry.degraded;
     kept.push(next);
   }

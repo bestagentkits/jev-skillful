@@ -8,7 +8,9 @@
 
 import { readFileSync } from "node:fs";
 import {
+  buildShortlist,
   DEFAULT_QUOTA_GROUPS,
+  DEFAULT_THRESHOLDS,
   evaluateGate,
   loadCorpus,
   parseFixtures,
@@ -23,6 +25,7 @@ import {
   runSweep,
   quotaGroupsWithSkillLimit,
   resolveConfig,
+  truncatePrompt,
 } from "../core/index.js";
 import type {
   CatalogEntry,
@@ -51,6 +54,8 @@ export interface EvalCommandOptions {
   record?: string;
   /** Answer from a recording instead of the network. */
   replay?: string;
+  /** Sweep quotas and report recall only. No API call, because recall is purely local. */
+  recallOnly: boolean;
   budgetMs?: number;
 }
 
@@ -162,6 +167,10 @@ export async function evalCommand(options: EvalCommandOptions): Promise<number> 
     return runSweepCommand({ fixtures, entries: corpus.entries, repeat, config, options });
   }
 
+  if (options.recallOnly) {
+    return recallOnlyCommand(fixtures, corpus.entries);
+  }
+
   log(`running ${fixtures.length} fixtures × ${repeat} = ${fixtures.length * repeat} routes`);
   const report = await runEval({
     fixtures,
@@ -198,8 +207,18 @@ async function runSweepCommand(input: {
   options: EvalCommandOptions;
 }): Promise<number> {
   const { fixtures, repeat, config, options } = input;
-  const grid = { noneThreshold: [0.3, 0.4, 0.5, 0.6, 0.7], skillQuota: [4, 6, 8] };
-  const total = grid.noneThreshold.length * grid.skillQuota.length;
+
+  // `recall@K` depends only on the shortlist, and the shortlist is built entirely locally from
+  // BM25 and the quota groups. Every quota point can therefore be measured without a single
+  // API call, which makes exhaustive quota tuning free. The threshold axes are what cost
+  // money, so they are swept with a small grid.
+  const grid = {
+    noneThreshold: [0.4, 0.5, 0.6],
+    skillQuota: [6],
+    minWinnerProbability: [0.1, 0.25, 0.4],
+  };
+  const total =
+    grid.noneThreshold.length * grid.skillQuota.length * grid.minWinnerProbability.length;
   log(`sweeping ${total} configurations × ${fixtures.length} fixtures × ${repeat} repeats = ${total * fixtures.length * repeat} routes`);
 
   const replay = options.replay === undefined ? undefined : loadReplay(options.replay);
@@ -239,6 +258,13 @@ async function runSweepCommand(input: {
           points: points.map((point) => ({
             noneThreshold: point.noneThreshold,
             skillQuota: point.skillQuota,
+            // Every swept axis has to appear here. Omitting one produces a result table whose
+            // rows cannot be attributed to a configuration, which is the same as not having run
+            // the sweep — and it happened once, with this exact field.
+            minWinnerProbability: point.minWinnerProbability,
+            ...(point.runnerUpThreshold === undefined
+              ? {}
+              : { runnerUpThreshold: point.runnerUpThreshold }),
             gatePassed: point.summary.passed,
             summary: point.summary,
             failing: point.gate.checks.filter((check) => !check.ok).map((check) => check.name),
@@ -297,6 +323,89 @@ function emit(
       `agreement ${stability.agreementRate.toFixed(3)} · p95 ${latency.p95}ms\n` +
       `fixtures ${report.meta.fixtureCount} × ${report.meta.repeat} = ${report.meta.totalRuns} runs\n\n`,
   );
+}
+
+/**
+ * Measure `recall@K` across skill-quota values without calling the API.
+ *
+ * Recall depends only on whether the gold capability reaches the shortlist, and the shortlist is
+ * built entirely from BM25 and the quota groups. So the most expensive question to answer by
+ * brute force — which quota composition retrieves best — is in fact the cheapest one to answer,
+ * and it can be swept exhaustively instead of guessed.
+ */
+function recallOnlyCommand(
+  fixtures: readonly ResolvedFixture[],
+  entries: readonly CatalogEntry[],
+): number {
+  const quotas = [4, 6, 8, 10, 14];
+  const maxChars = DEFAULT_THRESHOLDS.maxPromptChars;
+  const rows: {
+    skillQuota: number;
+    scorable: number;
+    recallAtK: number;
+    mrr: number;
+    itemCoverage: number;
+    meanShortlist: number;
+  }[] = [];
+
+  for (const skillQuota of quotas) {
+    const groups = quotaGroupsWithSkillLimit(skillQuota, DEFAULT_QUOTA_GROUPS);
+    let scorable = 0;
+    let hits = 0;
+    let reciprocalRankSum = 0;
+    let goldItems = 0;
+    let goldFound = 0;
+    let shortlistTotal = 0;
+
+    for (const fixture of fixtures) {
+      if (fixture.expectAbstain) continue;
+      scorable += 1;
+
+      const built = buildShortlist(entries, truncatePrompt(fixture.prompt, maxChars), groups);
+      const ids = built.entries.map((item) => item.id);
+      const present = new Set(ids);
+      shortlistTotal += ids.length;
+
+      goldItems += fixture.goldIds.length;
+      const found = fixture.goldIds.filter((id) => present.has(id));
+      goldFound += found.length;
+
+      if (found.length > 0) {
+        hits += 1;
+        let bestRank = Number.POSITIVE_INFINITY;
+        for (const id of found) bestRank = Math.min(bestRank, ids.indexOf(id));
+        reciprocalRankSum += 1 / (bestRank + 1);
+      }
+    }
+
+    rows.push({
+      skillQuota,
+      scorable,
+      recallAtK: scorable === 0 ? 0 : hits / scorable,
+      mrr: scorable === 0 ? 0 : reciprocalRankSum / scorable,
+      itemCoverage: goldItems === 0 ? 0 : goldFound / goldItems,
+      meanShortlist: scorable === 0 ? 0 : shortlistTotal / scorable,
+    });
+  }
+
+  rows.sort((a, b) => b.recallAtK - a.recallAtK || b.mrr - a.mrr);
+
+  if (process.argv.includes("--json")) {
+    process.stdout.write(`${JSON.stringify({ recallByQuota: rows }, null, 2)}\n`);
+    return 0;
+  }
+
+  process.stdout.write("Recall by skill quota (no API calls)\n\n");
+  process.stdout.write("| skillQuota | recall@K | MRR | gold item coverage | mean shortlist |\n");
+  process.stdout.write("| --- | --- | --- | --- | --- |\n");
+  for (const row of rows) {
+    process.stdout.write(
+      `| ${row.skillQuota} | ${row.recallAtK.toFixed(3)} | ${row.mrr.toFixed(3)} | ` +
+        `${row.itemCoverage.toFixed(3)} | ${row.meanShortlist.toFixed(1)} |\n`,
+    );
+  }
+  process.stdout.write(`\n${rows[0]?.scorable ?? 0} non-abstain fixtures\n`);
+  return 0;
 }
 
 interface LoadedCorpus {

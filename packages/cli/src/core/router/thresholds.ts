@@ -9,11 +9,18 @@
 export interface RouteThresholds {
   /**
    * If `none` wins, or its probability reaches this, nothing is injected.
-   *
-   * Also used as the floor for the winning candidate's probability: a winner below this
-   * means the model split its probability across candidates and had no clear preference.
    */
   noneThreshold: number;
+  /**
+   * Floor on the winning option's probability, separate from `noneThreshold`.
+   *
+   * These were one number at first, and the baseline run showed why that was wrong. A `choice`
+   * over sixteen options routinely gives a clearly-best answer less than half the probability,
+   * so a 0.5 floor rejected correct picks as `below-threshold`: five fixtures had the right
+   * answer chosen by the model and thrown away. Whether `none` should win and how confident a
+   * winner must be are different questions with different costs.
+   */
+  minWinnerProbability: number;
   /** Minimum `noul` for a candidate to be offered as a runner-up. */
   runnerUpThreshold: number;
   /** Upper bound on runner-ups. The primary is not counted. */
@@ -30,6 +37,7 @@ export interface RouteThresholds {
 
 export const DEFAULT_THRESHOLDS: RouteThresholds = {
   noneThreshold: 0.5,
+  minWinnerProbability: 0.25,
   runnerUpThreshold: 0.6,
   maxRunnersUp: 2,
   minPromptChars: 12,

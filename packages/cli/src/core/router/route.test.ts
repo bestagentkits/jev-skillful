@@ -204,15 +204,16 @@ describe("route — skipped branches", () => {
     expect(result.decision.reason).toBe("none-won");
   });
 
-  it("skips a winner the model was not confident about", async () => {
+  it("skips a winner below the winner-probability floor", async () => {
     const stub = stubFetch({
       responses: [
         jsonResponse(response("pi:skill:global:ak-backend-development", {
           none: 0.1,
-          "pi:skill:global:ak-backend-development": 0.4,
-          "pi:skill:global:ak-frontend-development": 0.3,
+          "pi:skill:global:ak-backend-development": 0.2,
+          "pi:skill:global:ak-frontend-development": 0.2,
           postgres: 0.2,
-        }, {}, 0.15)),
+          "pi:skill:global:ak-copywriting": 0.2,
+        }, {}, 0.05)),
       ],
     });
 
@@ -222,6 +223,27 @@ describe("route — skipped branches", () => {
     expect(result.decision.reason).toBe("below-threshold");
     // The winning option is still reported so `--explain` can show what nearly won.
     expect(result.primary?.id).toBe("pi:skill:global:ak-backend-development");
+  });
+
+  it("injects a winner that clears the floor but not noneThreshold", async () => {
+    // The floor is deliberately separate from `noneThreshold`. With sixteen options on the
+    // ballot a clearly-best answer routinely carries under half the probability, and treating
+    // that as no decision discarded correct picks.
+    const stub = stubFetch({
+      responses: [
+        jsonResponse(response("pi:skill:global:ak-backend-development", {
+          none: 0.05,
+          "pi:skill:global:ak-backend-development": 0.4,
+          "pi:skill:global:ak-frontend-development": 0.3,
+          postgres: 0.25,
+        }, {}, 0.15)),
+      ],
+    });
+
+    const result = await routeWith(BACKEND_PROMPT, stub);
+    expect(result.decision.kind).toBe("injected");
+    if (result.decision.kind !== "injected") throw new Error("expected injected");
+    expect(result.decision.primary.name).toBe("ak-backend-development");
   });
 
   it("skips an empty catalog without calling the network", async () => {
@@ -417,6 +439,23 @@ describe("route — credential safety", () => {
 
     expect(body).not.toContain("unique phrase");
     expect(body).toContain("prompt withheld");
+  });
+
+  it("puts the candidate name in the choice criteria, not only its description", async () => {
+    // A name is often the strongest signal there is: an MCP server's description is the
+    // infrastructure string found in a config file, while its name says what it does.
+    let body = "";
+    const stub = stubFetch({
+      responses: [jsonResponse(response("none", { none: 1 }))],
+      onRequest: (_url, init) => {
+        body = String(init.body);
+      },
+    });
+
+    await routeWith(BACKEND_PROMPT, stub);
+
+    expect(body).toContain("ak-backend-development");
+    expect(body).toContain("Build backends with Node.js");
   });
 
   it("truncates a very long prompt before sending it", async () => {

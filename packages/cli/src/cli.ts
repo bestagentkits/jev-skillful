@@ -30,6 +30,7 @@ Eval options:
   --repeat <n>           Routes per fixture, for the stability metric (default 1)
   --limit <n>            Use only the first n fixtures, for fast iterations
   --sweep                Sweep noneThreshold and skill quota instead of one run
+  --recall-only          Sweep quotas and report recall@K. No API call, no key, no cost
   --replay <file>        Answer from recorded responses, no key and no network
   --record <file>        Record live responses for later --replay
   --snapshot-corpus <f>  Scan the catalog and write a corpus snapshot, then exit
@@ -123,6 +124,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       json: parsed.json,
       explain: parsed.explain,
       sweep: parsed.sweep,
+      recallOnly: parsed.recallOnly,
       ...(parsed.snapshotCorpus === undefined ? {} : { snapshotCorpus: parsed.snapshotCorpus }),
       includePrivate: parsed.includePrivate,
       ...(parsed.record === undefined ? {} : { record: parsed.record }),
@@ -236,6 +238,7 @@ interface ParsedEvalFlags {
   json: boolean;
   explain: boolean;
   sweep: boolean;
+  recallOnly: boolean;
   snapshotCorpus?: string;
   includePrivate: boolean;
   record?: string;
@@ -263,6 +266,7 @@ function parseEvalFlags(argv: readonly string[]): ParsedEvalFlags {
     json: false,
     explain: false,
     sweep: false,
+    recallOnly: false,
     includePrivate: false,
     help: false,
   };
@@ -275,6 +279,7 @@ function parseEvalFlags(argv: readonly string[]): ParsedEvalFlags {
       if (arg === "--json") out.json = true;
       else if (arg === "--explain") out.explain = true;
       else if (arg === "--sweep") out.sweep = true;
+      else if (arg === "--recall-only") out.recallOnly = true;
       else if (arg === "--include-private") out.includePrivate = true;
       else if (arg === "-h" || arg === "--help") out.help = true;
       else {

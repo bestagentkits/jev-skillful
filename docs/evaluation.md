@@ -130,6 +130,69 @@ Checked on the holdout set:
 | `agreementRate` | 0.90 |
 | p95 latency | at most 1500ms |
 
+## Measured outcome
+
+The gate has been run on a development set of 67 fixtures and a holdout set of 22, against a
+corpus of 533 sanitised catalog entries. Live against the API, at three repeats per fixture.
+
+**The gate is not met.** `recall@K` is the criterion that blocks it:
+
+| Set | `recall@K` | MRR | `agreementRate` | p95 |
+|---|---|---|---|---|
+| Development (57 non-abstain) | 0.824 | 0.574 | 0.985 | 406ms |
+| Holdout (20 non-abstain) | 0.600 | 0.348 | — | — |
+
+The criterion asks for 0.90. Sweeping the shortlist size shows why that is out of reach by tuning:
+
+| Skill quota | Shortlist size | `recall@K` (holdout) |
+|---|---|---|
+| 4 | 11 | 0.550 |
+| 6 | 13 | 0.600 |
+| 8 | 15 | 0.600 |
+| 14 | 21 | 0.650 |
+
+Growing the shortlist by 90% buys five points. Recall saturates well below the criterion, because
+BM25 matches tokens: it retrieves a capability only when a prompt happens to share vocabulary with
+a capability description. Prompts are phrased as tasks and descriptions as capability statements,
+and the model that does the choosing can bridge that gap while the prefilter cannot.
+
+Closing it needs a different retrieval stage — embeddings or a learned retriever — not a different
+parameter.
+
+### What did improve, and by how much
+
+| Change | dev `recall@K` | holdout `recall@K` | holdout MRR |
+|---|---|---|---|
+| Baseline | 0.765 | 0.500 | 0.264 |
+| Include `when_to_use` in retrieval and in the request | **0.824** | **0.600** | **0.348** |
+
+`when_to_use` is a frontmatter field present on 203 of 230 skills, written for exactly this
+decision — `Invoke when the user wants honest advice, a second opinion, requirement reframing`.
+The reader had been discarding it. It was validated offline on both sets before being implemented.
+
+Two other corrections came out of the same measurement round. Whether `none` should win and how
+confident a winner must be were gated by one number, and a `choice` over sixteen options routinely
+gives a clearly-best answer under half the probability, so correct picks were being discarded; they
+are now separate thresholds. And the candidate label omitted the capability's name whenever a
+description existed, which left the model choosing between opaque ids for MCP servers whose
+descriptions are config-file strings.
+
+### Limitations
+
+**Non-English prompts retrieve poorly.** Prompts in Vietnamese reached `recall@K` 0.429, matching a
+capability only through loanwords such as `api` or `postgres`, because capability descriptions are
+written in English and BM25 has no shared vocabulary to match on. This is lexical, not tunable.
+
+**MCP retrieval is not measured fairly by a sanitised corpus.** An MCP entry's catalog description
+is the transport and target read from a config file, which after redaction carries no retrievable
+text. The fix is for the catalog to describe an MCP server by the tools it exposes.
+
+One earlier measurement is worth recording as a caution. Recall first measured 0.804 on the
+development set, which turned out to be inflated: MCP descriptions contained private service URLs,
+and BM25 was matching the server's name out of the URL. Sanitising the corpus for publication
+removed that text and the number dropped to its honest value. A retrieval result that depends on a
+leaked URL containing a server name is not a retrieval result.
+
 ## Running it without a key
 
 `--record` captures live responses; `--replay` answers from them. Replay substitutes a fake

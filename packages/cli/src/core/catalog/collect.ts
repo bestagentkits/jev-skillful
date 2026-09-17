@@ -152,6 +152,8 @@ export interface MarkdownItem {
   /** Name taken from frontmatter, or the file stem when absent. */
   name: string;
   description: string;
+  /** Routing-intent text, when the frontmatter provides it. */
+  whenToUse?: string;
   degraded: boolean;
 }
 
@@ -180,7 +182,7 @@ export async function collectMarkdownItems(dir: string): Promise<MarkdownItem[]>
 export async function readSkillParts(
   file: string,
   dir: string,
-): Promise<{ name: string; description: string; degraded: boolean }> {
+): Promise<{ name: string; description: string; whenToUse?: string; degraded: boolean }> {
   const fallback = path.basename(dir);
   const text = await readTextSafe(file);
   if (text === null) {
@@ -190,6 +192,7 @@ export async function readSkillParts(
   return {
     name: fm.name ?? fallback,
     description: fm.description ?? "",
+    ...(fm.whenToUse === undefined ? {} : { whenToUse: fm.whenToUse }),
     degraded: fm.degraded || fm.description === undefined,
   };
 }
@@ -205,6 +208,7 @@ export async function readMarkdownItem(file: string): Promise<MarkdownItem | nul
     file,
     name,
     description: fm.description ?? "",
+    ...(fm.whenToUse === undefined ? {} : { whenToUse: fm.whenToUse }),
     degraded: fm.degraded || fm.description === undefined,
   };
 }

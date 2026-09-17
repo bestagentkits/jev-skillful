@@ -67,6 +67,7 @@ async function scanTree(
       buildEntry("pi", "skill", scope, {
         name: parts.name,
         description: normaliseDescription(parts.description),
+        ...(parts.whenToUse === undefined ? {} : { whenToUse: normaliseDescription(parts.whenToUse) }),
         sourcePath: skill.file,
         ...(parts.degraded ? { degraded: true } : {}),
       }),
@@ -78,6 +79,7 @@ async function scanTree(
       buildEntry("pi", "agent", scope, {
         name: agent.name,
         description: normaliseDescription(agent.description),
+        ...(agent.whenToUse === undefined ? {} : { whenToUse: normaliseDescription(agent.whenToUse) }),
         sourcePath: agent.file,
         ...(agent.degraded ? { degraded: true } : {}),
       }),

@@ -37,10 +37,22 @@ export interface Candidate {
 }
 
 /** Reduce a catalog entry to what the request actually needs. */
+/**
+ * Reduce a catalog entry to what the request actually needs.
+ *
+ * The routing-intent text is folded into the description rather than carried as a separate
+ * field, because to the model they are one question — what does this help with, and when. One
+ * combined string also means one length bound applies.
+ */
 export function toCandidate(entry: CatalogEntry, limit = MAX_CANDIDATE_DESCRIPTION_CHARS): Candidate {
-  const description = entry.description.length > limit
-    ? `${entry.description.slice(0, limit - 1).trimEnd()}…`
-    : entry.description;
+  const combined = [entry.description, entry.whenToUse ?? ""]
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join(" ");
+
+  const description = combined.length > limit
+    ? `${combined.slice(0, limit - 1).trimEnd()}…`
+    : combined;
 
   return { id: entry.id, kind: entry.kind, name: entry.name, description };
 }
@@ -73,18 +85,24 @@ export function buildRouteState(task: string, candidates: readonly Candidate[]):
 export function buildPrimaryQuestion(candidates: readonly Candidate[]): Question {
   const criteria: Record<string, string | null> = {
     [NONE_OPTION]:
-      "No listed capability is needed. Choose this for small talk, for a task the agent can already do with the context it has, or when none of the listed capabilities would help.",
+      "No listed capability is needed. Choose this for small talk, for a short or local edit the agent can already make with the context it has, for a question about the current code that can be answered by reading it, and for anything the listed capabilities would not concretely help with.",
   };
 
   for (const candidate of candidates) {
-    const label = candidate.description.length > 0 ? candidate.description : candidate.name;
+    // The label carries the name as well as the description. A name is often the strongest
+    // signal available — `agent-brain` says what it is, while its description is the
+    // infrastructure string the catalog found in a config file — and omitting it left the
+    // model choosing between opaque ids with nothing to go on.
+    const label = candidate.description.length > 0
+      ? `${candidate.name} — ${candidate.description}`
+      : candidate.name;
     criteria[candidate.id] = `[${candidate.kind}] ${label}`;
   }
 
   return {
     type: "choice",
     instructions:
-      "Which single capability, if any, should be loaded before answering the task? Choose the capability that would most change how the task is done. Choose `none` when the task needs no capability from the list.",
+      "Which single capability, if any, should be loaded before answering the task? Choose the capability that would most change how the task is done. Prefer `none` when the task is small, local, or already answerable from the context the agent has.",
     criteria,
   };
 }

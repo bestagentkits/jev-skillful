@@ -120,6 +120,7 @@ async function skillEntry(
   return buildEntry("omp", "skill", scope, {
     name: parts.name,
     description: normaliseDescription(parts.description),
+    ...(parts.whenToUse === undefined ? {} : { whenToUse: normaliseDescription(parts.whenToUse) }),
     sourcePath: file,
     ...(parts.degraded ? { degraded: true } : {}),
   });

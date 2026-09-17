@@ -115,7 +115,8 @@ same words stay separate — they are different things.
 
 | Name | Default | Meaning |
 |---|---|---|
-| `noneThreshold` | 0.5 | `none` wins, or its probability reaches this, or the winner's probability is below it → inject nothing |
+| `noneThreshold` | 0.5 | `none` wins, or its probability reaches this → inject nothing |
+| `minWinnerProbability` | 0.25 | Floor on the winning option's probability |
 | `runnerUpThreshold` | 0.6 | Minimum `noul` for a runner-up |
 | `maxRunnersUp` | 2 | Cap on runner-ups |
 | `minPromptChars` | 12 | Shorter prompts are never routed |
@@ -123,13 +124,17 @@ same words stay separate — they are different things.
 | `maxPromptChars` | 1000 | Prompt truncation before transmission |
 | `requestTimeoutMs` | 1800 | Per-attempt timeout |
 
-`noneThreshold` doing double duty deserves a note. It gates `none` *and* acts as a floor on
-the winner's probability. A winner at 0.4 probability out of sixteen options means the model
-split the vote and had no real preference; injecting there is more likely to mislead than to
-help, and that case is reported as `below-threshold` rather than as a success.
+`noneThreshold` and `minWinnerProbability` were one number at first, and the baseline run showed
+why that was wrong. A `choice` over sixteen options routinely gives a clearly-best answer less
+than half the probability, so a 0.5 floor rejected correct picks as `below-threshold`: five
+fixtures had the right answer chosen by the model and then thrown away. Whether `none` should win
+and how confident a winner has to be are different questions with different costs — a wrong
+abstention loses a capability the task needed, while a wrong injection spends context.
 
-**These are starting values, not tuned ones.** They are based on four sample prompts, which
-is not an evaluation. Phase 3 owns the tuning.
+The candidate label carries the **name** as well as the description. It used to omit the name
+whenever a description existed, which left the model choosing between opaque ids for MCP servers
+whose descriptions are the infrastructure string found in a config file. A name is often the
+strongest signal available.
 
 `budgetMs` is enforced with an abort signal that the client checks between retries, not just
 by trimming the per-attempt timeout, so a retry sequence cannot overrun the ceiling.

@@ -35,6 +35,10 @@ export interface CatalogEntry {
   /** Absolute path of the file or config that produced this entry. */
   sourcePath: string;
   /**
+   * Routing-intent text, when the source provides it. Used by retrieval and sent to the model.
+   */
+  whenToUse?: string;
+  /**
    * True when the entry was found but its metadata could not be read cleanly
    * (malformed frontmatter, unreadable file, missing required fields). Degraded
    * entries are still returned so a single broken item cannot fail the scan.

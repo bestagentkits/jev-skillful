@@ -13,6 +13,7 @@ import { catalogId } from "./types.js";
 export interface DescribedItem {
   name: string;
   description: string;
+  whenToUse?: string;
   sourcePath: string;
   degraded?: boolean;
   meta?: Record<string, string>;
@@ -33,6 +34,7 @@ export function buildEntry(
     scope,
     sourcePath: item.sourcePath,
   };
+  if (item.whenToUse !== undefined && item.whenToUse.length > 0) entry.whenToUse = item.whenToUse;
   if (item.degraded === true) entry.degraded = true;
   if (item.meta !== undefined) entry.meta = item.meta;
   return entry;

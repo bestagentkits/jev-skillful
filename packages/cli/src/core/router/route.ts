@@ -258,14 +258,16 @@ export async function route(prompt: string, options: RouteOptions): Promise<Rout
     );
   }
 
-  // A winner the model was unsure about is the case where injection is more likely to
-  // mislead than help, so an evenly split vote is treated as no decision.
-  if (probability < thresholds.noneThreshold) {
+  // A winner the model was unsure about is where injection is more likely to mislead than
+  // help. The floor is its own threshold rather than `noneThreshold`: with sixteen options on
+  // the ballot, a clearly-best answer often carries well under half the probability, and the
+  // baseline run showed a 0.5 floor discarding correct picks.
+  if (probability < thresholds.minWinnerProbability) {
     return finish(
       {
         kind: "skipped",
         reason: "below-threshold",
-        detail: `Winning probability ${probability.toFixed(3)} is below ${thresholds.noneThreshold}`,
+        detail: `Winning probability ${probability.toFixed(3)} is below ${thresholds.minWinnerProbability}`,
       },
       { ...extras, primary: { id: winner.id, noneP, confidence: primaryAnswer.confidence, probability } },
     );

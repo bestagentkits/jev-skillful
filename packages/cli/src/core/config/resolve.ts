@@ -44,6 +44,7 @@ const ENV_KEYS = {
   baseUrl: "SKILLFUL_BASE_URL",
   budgetMs: "SKILLFUL_BUDGET_MS",
   noneThreshold: "SKILLFUL_NONE_THRESHOLD",
+  minWinnerProbability: "SKILLFUL_MIN_WINNER_PROBABILITY",
   runnerUpThreshold: "SKILLFUL_RUNNER_UP_THRESHOLD",
   maxRunnersUp: "SKILLFUL_MAX_RUNNERS_UP",
   minPromptChars: "SKILLFUL_MIN_PROMPT_CHARS",
@@ -187,6 +188,7 @@ export function resolveConfig(input: ResolveConfigInput = {}): ResolvedConfig {
 
   const thresholds: RouteThresholds = {
     noneThreshold: threshold("noneThreshold"),
+    minWinnerProbability: threshold("minWinnerProbability"),
     runnerUpThreshold: threshold("runnerUpThreshold"),
     maxRunnersUp: threshold("maxRunnersUp"),
     minPromptChars: threshold("minPromptChars"),
