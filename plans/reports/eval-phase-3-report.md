@@ -15,11 +15,15 @@ Measured at `--repeat 5`. The recall row is the blocker; the rest are reported f
 | Metric | Required | Achieved | Result |
 |---|---|---|---|
 | `recall@K` | ≥ 0.90 | **0.600** | FAIL |
-| `top1Accuracy` | ≥ 0.80 | see sweep | — |
-| `noneRecall` | ≥ 0.90 | see sweep | — |
-| `noneF1` | ≥ 0.80 | see sweep | — |
+| `top1Accuracy` | ≥ 0.80 | 0.731 (dev) | FAIL |
+| `noneRecall` | ≥ 0.90 | 0.813 (dev) | FAIL |
+| `noneF1` | ≥ 0.80 | 0.813 (dev) | pass |
 | `agreementRate` | ≥ 0.90 | 0.985 | pass |
 | p95 latency | ≤ 1500ms | 406ms | pass |
+
+The decision metrics are quoted from the development set at the swept configuration, because the
+holdout set was reserved for the recall confirmation. Two of six criteria fail, and the recall gap
+is the one that matters.
 
 ## The decisive finding
 
@@ -147,22 +151,32 @@ reported as a filter that ran, not as a guarantee.
 The threshold sweep was run over `noneThreshold` ∈ {0.4, 0.5, 0.6} × `minWinnerProbability` ∈
 {0.1, 0.25, 0.4} at a fixed skill quota of 6, one repeat per point. Nine configurations, 603 routes.
 
-| Axis | Range of `top1Accuracy` | Range of `noneRecall` |
-|---|---|---|
-| Both thresholds varied, `recall@K` fixed at 0.804 | 0.701 – 0.731 | 0.688 – 0.813 |
+| `noneThreshold` | `minWinnerProbability` | `top1` | `noneRecall` | `noneF1` | `recall@K` |
+|---|---|---|---|---|---|
+| 0.4 | 0.1 | 0.731 | 0.813 | **0.813** | 0.804 |
+| 0.4 | 0.25 | 0.731 | 0.813 | **0.813** | 0.804 |
+| 0.4 | 0.4 | 0.731 | 0.813 | 0.788 | 0.804 |
+| 0.5 | 0.4 | 0.731 | 0.813 | 0.788 | 0.804 |
+| 0.6 | 0.4 | 0.731 | 0.813 | 0.788 | 0.804 |
+| 0.5 | 0.25 | 0.716 | 0.750 | 0.774 | 0.804 |
+| 0.5 | 0.1 | 0.716 | 0.750 | 0.774 | 0.804 |
+| 0.6 | 0.25 | 0.716 | 0.750 | 0.774 | 0.804 |
+| 0.6 | 0.1 | 0.701 | 0.688 | 0.733 | 0.804 |
 
-`recall@K` was **identical in all nine configurations**, which confirms the structural point above:
-recall depends on the shortlist, the shortlist depends on BM25 and the quotas, and no threshold
-touches either.
+**`recall@K` is identical in all nine rows**, which confirms the structural point above. Recall
+depends on the shortlist, the shortlist depends on BM25 and the quotas, and no threshold touches
+either.
 
-The sweep does not justify moving the defaults. Top-1 moves by 0.030 across the whole grid, which
-is close to the run-to-run noise already measured (±0.03 on `noneP`), so at one repeat per point the
-differences are not separable from noise. The direction is consistent — lower `noneThreshold` and
-lower `minWinnerProbability` are mildly better on both `top1` and `noneRecall` — but a direction is
-not a magnitude, and the grid would need more repeats per point before a default should move.
+**`noneThreshold` was moved from 0.5 to 0.4 on this evidence.** It is never worse than any other
+value on any metric, and against the previous default it gives `top1` 0.716 → 0.731, `noneRecall`
+0.750 → 0.813 and `noneF1` 0.774 → 0.813. `minWinnerProbability` stays at 0.25: 0.1 performs
+identically and 0.4 gives up `noneF1`, so 0.25 is the middle of a flat region rather than a guess.
 
-`minWinnerProbability: 0.25` is therefore kept, with the note that 0.1 was never worse and would be
-the first thing to test with more repeats.
+The honest caveat is that the top-1 spread across the entire grid is 0.030, and run-to-run noise on
+`noneP` was measured at roughly ±0.03. At one repeat per point, a 0.015 difference is a direction,
+not a magnitude. The `noneRecall` and `noneF1` gains are larger and move together, which is why the
+change was made, but this grid should be re-run at three or more repeats before the value is treated
+as settled. That is recorded as a next step rather than presented as a settled result.
 
 The quota axis was not swept through the API. It does not need to be: `recall@K` is the only metric
 that depends on it and it is computable offline, which the table in the decisive finding uses. This
@@ -170,9 +184,9 @@ is cheaper and strictly more complete than sweeping it by brute force.
 
 One defect found while running this, recorded because it invalidated an artifact rather than a
 result: the sweep's JSON output omitted `minWinnerProbability`, so the nine rows could not be
-attributed to configurations. The measurements were correct — only the serialisation was lossy — so
-the ranges above stand, but the first sweep file is not usable as evidence and the run was redone.
-A sweep whose rows cannot be attributed is the same as no sweep.
+attributed to configurations. The measurements were correct — only the serialisation was lossy — but
+a sweep whose rows cannot be attributed is the same as no sweep, so the run was redone with the
+field present and the table above is from the corrected run.
 
 ## Recommendation
 

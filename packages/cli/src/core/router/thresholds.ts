@@ -36,7 +36,13 @@ export interface RouteThresholds {
 }
 
 export const DEFAULT_THRESHOLDS: RouteThresholds = {
-  noneThreshold: 0.5,
+  // Swept, not guessed. Across noneThreshold {0.4, 0.5, 0.6} x minWinnerProbability {0.1, 0.25, 0.4}
+  // at one repeat per point, 0.4 was never worse than any other value on any metric, and it beat
+  // the previous default of 0.5 by top1 0.716 -> 0.731, noneRecall 0.750 -> 0.813 and noneF1
+  // 0.774 -> 0.813. The gain is close to the +/-0.03 run-to-run noise already measured on `noneP`,
+  // so it is a defensible direction rather than a large effect, and it should be re-confirmed with
+  // more repeats before being treated as settled.
+  noneThreshold: 0.4,
   minWinnerProbability: 0.25,
   runnerUpThreshold: 0.6,
   maxRunnersUp: 2,
