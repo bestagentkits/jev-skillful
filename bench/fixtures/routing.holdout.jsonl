@@ -1,0 +1,44 @@
+# Holdout fixtures — touched only to confirm a configuration chosen on the development set.
+# Never used for tuning, so the confirmation is not circular.
+# Same format as routing.jsonl.
+
+# --- coding -----------------------------------------------------------------------
+{"id":"ho-graphql","group":"coding","prompt":"expose this data over graphql with a resolver per entity","gold":["ak-backend-development"]}
+{"id":"ho-grpc","group":"coding","prompt":"define a protobuf service and generate the gRPC server stubs","gold":["ak-backend-development"]}
+{"id":"ho-redis-cache","group":"coding","prompt":"add a redis cache layer in front of the expensive query","gold":["ak-backend-development","ak-databases"]}
+{"id":"ho-svelte","group":"coding","prompt":"build this settings panel as a component library with theming","gold":["ak-ui-styling","ak-frontend-development"]}
+{"id":"ho-flaky-test","group":"coding","prompt":"this test passes locally but fails in CI, find out why","gold":["ak-debug","ak-web-testing"]}
+{"id":"ho-secrets","group":"coding","prompt":"check the repository for hardcoded credentials before we open source it","gold":["ak-security"]}
+{"id":"ho-terraform","group":"coding","prompt":"provision a load balancer and a managed database in our cloud account","gold":["ak-devops","ak-deploy"]}
+{"id":"ho-dependency-audit","group":"coding","prompt":"check our dependencies for known vulnerabilities and upgrade them","gold":["ak-security","ak-fix"]}
+
+# --- marketing --------------------------------------------------------------------
+{"id":"ho-ad-variants","group":"marketing","prompt":"write ten ad headline variants to test against each other","gold":["ak-copywriting"]}
+{"id":"ho-case-study","group":"marketing","prompt":"turn this customer interview into a written case study","gold":["ak-copywriting"]}
+{"id":"ho-og-image","group":"marketing","prompt":"generate a banner image for the blog post and the social preview","gold":["ak-ai-artist","ak-design"]}
+{"id":"ho-launch-video","group":"marketing","prompt":"produce a short launch video from an HTML template","gold":["ak-html-video","ak-hyperframes","video-production"]}
+
+# --- mcp --------------------------------------------------------------------------
+{"id":"ho-memory-decisions","group":"mcp","prompt":"write down the architecture decision we just agreed so it persists","gold":["agent-brain","agentbrain"]}
+{"id":"ho-browser-scrape","group":"mcp","prompt":"open the dashboard in a real browser and read the numbers off the page","gold":["computer-use"]}
+
+# --- agent ------------------------------------------------------------------------
+{"id":"ho-agent-debug","group":"agent","prompt":"delegate this failing build to a specialist and report back the cause","gold":["debugger","ak-debug"]}
+{"id":"ho-agent-docs","group":"agent","prompt":"update the project documentation to match what we changed","gold":["docs-manager","ak-docs"]}
+
+# --- trivial — must abstain -------------------------------------------------------
+{"id":"ho-triv-perfect","group":"trivial","prompt":"perfect, that works","gold":["none"]}
+{"id":"ho-triv-carried","group":"trivial","prompt":"great, carry on","gold":["none"]}
+{"id":"ho-triv-what-changed","group":"trivial","prompt":"what did you change just now?","gold":["none"]}
+{"id":"ho-triv-save","group":"trivial","prompt":"save the file","gold":["none"]}
+{"id":"ho-triv-list-files","group":"trivial","prompt":"list the files in this directory","gold":["none"]}
+{"id":"ho-triv-undo","group":"trivial","prompt":"undo that","gold":["none"]}
+
+# --- ambiguous --------------------------------------------------------------------
+{"id":"ho-amb-onboard","group":"ambiguous","prompt":"onboard me to this codebase, explain how it is structured","gold":["ak-explain","Explore","explore","researcher"]}
+{"id":"ho-amb-perf","group":"ambiguous","prompt":"the page feels slow, profile it and make it faster","gold":["ak-react-best-practices","ak-fix","ak-debug"]}
+
+# --- vietnamese -------------------------------------------------------------------
+{"id":"ho-vi-frontend","group":"vietnamese","prompt":"xây dựng giao diện người dùng cho trang quản lý","gold":["ak-frontend-development","ak-ui-ux-pro-max"]}
+{"id":"ho-vi-security","group":"vietnamese","prompt":"kiểm tra bảo mật cho ứng dụng trước khi phát hành","gold":["ak-security"]}
+{"id":"ho-vi-trivial2","group":"vietnamese","prompt":"được rồi, tiếp tục đi","gold":["none"],"notes":"must abstain"}

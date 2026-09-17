@@ -94,6 +94,44 @@ export {
 export type { BuiltRequest, Candidate, RouteState } from "./router/questions.js";
 
 // ---------------------------------------------------------------------------
+// Eval
+// ---------------------------------------------------------------------------
+export {
+  ABSTAIN,
+  FIXTURE_GROUPS,
+  FixtureError,
+  buildGoldIndex,
+  groupCounts,
+  parseFixtures,
+  resolveFixtures,
+} from "./eval/fixtures.js";
+export type { Fixture, FixtureGroup, ResolvedFixture } from "./eval/fixtures.js";
+export {
+  hasInfrastructureIdentifier,
+  isPublicSafe,
+  loadCorpus,
+  redactInfrastructure,
+  sanitiseCorpus,
+  saveCorpus,
+  PRIVATE_MARKERS,
+} from "./eval/corpus.js";
+export type { CorpusSnapshot } from "./eval/corpus.js";
+export { abstained, chosenId, decisionMetrics, decisionMetricsByGroup, decisionSignature } from "./eval/metrics/decision.js";
+export type { DecisionMetrics } from "./eval/metrics/decision.js";
+export { latencyMetrics, percentile } from "./eval/metrics/latency.js";
+export type { LatencyMetrics } from "./eval/metrics/latency.js";
+export { retrievalMetrics, retrievalMetricsByKind } from "./eval/metrics/retrieval.js";
+export type { FixtureOutcome, KindRetrieval, RetrievalMetrics } from "./eval/metrics/retrieval.js";
+export { stabilityMetrics } from "./eval/metrics/stability.js";
+export type { FixtureStability, StabilityMetrics } from "./eval/metrics/stability.js";
+export { fixtureGroupsOf, runEval } from "./eval/run.js";
+export type { EvalConfig, EvalOptions, EvalReport, RouteCaller } from "./eval/run.js";
+export { DEFAULT_GATE, evaluateGate, renderGateText, renderMarkdown } from "./eval/report.js";
+export type { GateCheck, GateCriteria, GateResult, ReportProvenance } from "./eval/report.js";
+export { DEFAULT_SWEEP_GRID, quotaGroupsWithSkillLimit, renderSweep, runSweep } from "./eval/sweep.js";
+export type { SweepGrid, SweepOptions, SweepPoint } from "./eval/sweep.js";
+
+// ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 export { defaultConfigPath, resolveConfig } from "./config/resolve.js";

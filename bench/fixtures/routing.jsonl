@@ -1,0 +1,89 @@
+# Router eval fixtures — development set.
+# One JSON object per line. `gold` is a capability NAME (or "none" to require abstention).
+# Names are used instead of ids because the same capability is usually installed under
+# several runtime roots, and which copy gets injected does not change whether the task worked.
+# Groups: coding, marketing, mcp, agent, trivial, ambiguous, vietnamese.
+#
+# This set is used for tuning. The holdout set is touched only to confirm a selected
+# configuration, never to choose one.
+
+# --- coding (20) ------------------------------------------------------------------
+{"id":"coding-auth-refactor","group":"coding","prompt":"refactor the auth middleware to use refresh tokens","gold":["ak-backend-development"],"notes":"the reference case measured during the brainstorm"}
+{"id":"coding-rest-api","group":"coding","prompt":"build a REST endpoint for creating invoices with input validation","gold":["ak-backend-development"]}
+{"id":"coding-oauth","group":"coding","prompt":"add Google OAuth login with session cookies to the app","gold":["ak-better-auth","ak-backend-development"],"notes":"either is defensible"}
+{"id":"coding-sql-index","group":"coding","prompt":"this postgres query does a sequential scan, add the right index","gold":["ak-databases"]}
+{"id":"coding-migration","group":"coding","prompt":"write a database migration that backfills the new column safely","gold":["ak-databases","ak-backend-development"]}
+{"id":"coding-react-form","group":"coding","prompt":"build a react form component with validation and suspense boundaries","gold":["ak-frontend-development","ak-tanstack"]}
+{"id":"coding-render-perf","group":"coding","prompt":"this list re-renders too often, fix the react performance problem","gold":["ak-react-best-practices","ak-frontend-development"]}
+{"id":"coding-ssr","group":"coding","prompt":"set up server side rendering and caching for a Next.js app router project","gold":["ak-web-frameworks"]}
+{"id":"coding-debug-null","group":"coding","prompt":"I get a cannot read property of undefined error intermittently, help me find the root cause","gold":["ak-debug"]}
+{"id":"coding-test-e2e","group":"coding","prompt":"write playwright end to end tests for the checkout flow","gold":["ak-web-testing","ak-test"]}
+{"id":"coding-owasp","group":"coding","prompt":"audit this endpoint for SQL injection and secrets in the repo","gold":["ak-security"]}
+{"id":"coding-docker","group":"coding","prompt":"dockerize this service and set up a CI pipeline that builds and pushes the image","gold":["ak-devops"]}
+{"id":"coding-k8s","group":"coding","prompt":"deploy this container to kubernetes with a helm chart and resource limits","gold":["ak-devops"]}
+{"id":"coding-git-branch","group":"coding","prompt":"create a feature branch and open a pull request with a conventional commit message","gold":["ak-git","ak-github"]}
+{"id":"coding-issue-triage","group":"coding","prompt":"file a github issue with reproduction steps and label it for triage","gold":["ak-github","source-command-create-github-issue"]}
+{"id":"coding-mcp-server","group":"coding","prompt":"build an MCP server that exposes our internal API as tools","gold":["ak-mcp-builder","ak-agentize"]}
+{"id":"coding-3d-scene","group":"coding","prompt":"render a 3d scene with a rotating model and lighting using WebGL","gold":["ak-threejs"]}
+{"id":"coding-shader","group":"coding","prompt":"write a fragment shader for an animated procedural noise texture","gold":["ak-shader"]}
+{"id":"coding-mobile-push","group":"coding","prompt":"add push notifications and offline caching to the mobile app","gold":["ak-mobile-development"]}
+{"id":"coding-payments","group":"coding","prompt":"integrate stripe checkout with webhooks for subscription billing","gold":["ak-payment-integration"]}
+
+# --- marketing (8) ----------------------------------------------------------------
+{"id":"mkt-landing-copy","group":"marketing","prompt":"write the headline and hero copy for a landing page selling our new product","gold":["ak-copywriting"]}
+{"id":"mkt-email-seq","group":"marketing","prompt":"draft a 5 email onboarding sequence to activate new signups","gold":["ak-copywriting"]}
+{"id":"mkt-seo-audit","group":"marketing","prompt":"audit our site for technical SEO problems and fix the meta tags","gold":["seo-optimization"]}
+{"id":"mkt-keywords","group":"marketing","prompt":"research keywords and estimate difficulty for a page about invoice software","gold":["seo-optimization"]}
+{"id":"mkt-pitch-deck","group":"marketing","prompt":"build an investor pitch deck with a traction chart and a go to market slide","gold":["slides-design"]}
+{"id":"mkt-video-script","group":"marketing","prompt":"write a 60 second vertical video script for a tiktok ad","gold":["video-production"]}
+{"id":"mkt-brand","group":"marketing","prompt":"design a logo and a colour palette for a new developer tool brand","gold":["ak-design"]}
+{"id":"mkt-product-shot","group":"marketing","prompt":"generate a product mockup image for the app store listing","gold":["ak-ai-artist","ak-design"]}
+
+# --- mcp (6) ----------------------------------------------------------------------
+{"id":"mcp-memory","group":"mcp","prompt":"remember this decision so you can recall it in later sessions","gold":["agent-brain","agentbrain"]}
+{"id":"mcp-browser","group":"mcp","prompt":"drive a real browser to log in and click through the checkout flow","gold":["computer-use"]}
+{"id":"mcp-node-eval","group":"mcp","prompt":"run this javascript snippet and show me the result","gold":["node_repl"]}
+{"id":"mcp-runtime","group":"mcp","prompt":"list which agent runtimes are installed and reachable on this machine","gold":["ak-agent-runtime"]}
+{"id":"mcp-recall","group":"mcp","prompt":"what decisions did we record about the auth approach earlier","gold":["agent-brain","agentbrain"]}
+{"id":"mcp-interactive-page","group":"mcp","prompt":"open a page and interact with it to fill in a multi step form","gold":["computer-use"]}
+
+# --- agent (4) --------------------------------------------------------------------
+{"id":"agent-review","group":"agent","prompt":"review this pull request for correctness and regressions","gold":["code-reviewer"]}
+{"id":"agent-plan","group":"agent","prompt":"break this feature request into an implementation plan with phases","gold":["planner","ak-plan"]}
+{"id":"agent-explore","group":"agent","prompt":"search the codebase and tell me every place the config is loaded","gold":["Explore","explore"]}
+{"id":"agent-tester","group":"agent","prompt":"write and run the test suite for this module then report coverage","gold":["tester","ak-test"]}
+
+# --- trivial (15) — must abstain --------------------------------------------------
+{"id":"triv-thanks","group":"trivial","prompt":"thanks!","gold":["none"],"notes":"chitchat, caught by length"}
+{"id":"triv-thankyou","group":"trivial","prompt":"thank you so much for the help","gold":["none"],"notes":"chitchat, caught by content"}
+{"id":"triv-lgtm","group":"trivial","prompt":"looks good to me","gold":["none"],"notes":"chitchat, caught by content"}
+{"id":"triv-ok","group":"trivial","prompt":"ok","gold":["none"],"notes":"very short"}
+{"id":"triv-nice","group":"trivial","prompt":"nice work","gold":["none"]}
+{"id":"triv-proceed","group":"trivial","prompt":"continue","gold":["none"],"notes":"stall prompt"}
+{"id":"triv-hello","group":"trivial","prompt":"hello there","gold":["none"]}
+{"id":"triv-next","group":"trivial","prompt":"next","gold":["none"]}
+{"id":"triv-fix-typo","group":"trivial","prompt":"fix the typo in README line 12","gold":["none"],"notes":"very short request, needs no skill"}
+{"id":"triv-rename","group":"trivial","prompt":"rename the variable x to count","gold":["none"]}
+{"id":"triv-run-tests","group":"trivial","prompt":"run the tests again","gold":["none"],"notes":"already-known command"}
+{"id":"triv-what-file","group":"trivial","prompt":"what does this function do?","gold":["none"],"notes":"answerable from context"}
+{"id":"triv-which-version","group":"trivial","prompt":"which node version is installed here","gold":["none"]}
+{"id":"triv-delete-line","group":"trivial","prompt":"delete that last line","gold":["none"]}
+{"id":"triv-commit","group":"trivial","prompt":"commit what we have so far","gold":["none"],"notes":"the agent already knows how"}
+
+# --- ambiguous (6) — multiple defensible answers ----------------------------------
+{"id":"amb-doc-pipeline","group":"ambiguous","prompt":"document this module and add a usage example to the README","gold":["ak-docs","docs-manager","documentation-management"]}
+{"id":"amb-refactor-clean","group":"ambiguous","prompt":"simplify this function, it has grown too many branches","gold":["code-simplifier","ak-fix"]}
+{"id":"amb-research-then-plan","group":"ambiguous","prompt":"research how other tools solve this and propose an approach","gold":["ak-research","researcher","ak-brainstorm"]}
+{"id":"amb-incident","group":"ambiguous","prompt":"the staging deploy failed, work out why and fix it","gold":["ak-debug","debugger","ak-devops"]}
+{"id":"amb-release","group":"ambiguous","prompt":"prepare this branch for release and publish a new version","gold":["ak-ship","git-manager","ak-git"]}
+{"id":"amb-ui-polish","group":"ambiguous","prompt":"the settings screen looks inconsistent, improve the visual design","gold":["ui-ux-designer","ak-ui-ux-pro-max","ak-frontend-design"]}
+
+# --- vietnamese (8) ---------------------------------------------------------------
+{"id":"vi-backend","group":"vietnamese","prompt":"viết API để tạo hoá đơn và xử lý thanh toán","gold":["ak-backend-development"]}
+{"id":"vi-database","group":"vietnamese","prompt":"tối ưu truy vấn postgres đang chạy quá chậm","gold":["ak-databases"]}
+{"id":"vi-debug","group":"vietnamese","prompt":"tìm nguyên nhân lỗi và sửa lại cho đúng","gold":["ak-debug"]}
+{"id":"vi-test","group":"vietnamese","prompt":"viết test tự động cho luồng đăng nhập","gold":["ak-test","ak-web-testing"]}
+{"id":"vi-copy","group":"vietnamese","prompt":"viết nội dung quảng cáo cho trang bán hàng","gold":["ak-copywriting"]}
+{"id":"vi-deploy","group":"vietnamese","prompt":"triển khai ứng dụng lên máy chủ và cấu hình docker","gold":["ak-devops","ak-deploy"]}
+{"id":"vi-plan","group":"vietnamese","prompt":"lập kế hoạch triển khai tính năng này theo từng giai đoạn","gold":["ak-plan","planner"]}
+{"id":"vi-trivial","group":"vietnamese","prompt":"cảm ơn bạn","gold":["none"],"notes":"must abstain in Vietnamese too"}
