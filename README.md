@@ -149,6 +149,8 @@ injects it. Read it at `~/.pi/agent/extensions/skillful/index.ts` before trustin
 - [docs/architecture.md](docs/architecture.md) — the catalog, the router, the four hook mechanisms
 - [docs/routing.md](docs/routing.md) — the questions, thresholds and quota design
 - [docs/evaluation.md](docs/evaluation.md) — how the router is measured, and the results
+- [docs/measurement.md](docs/measurement.md) — the three layers, RAE, and how to read the dashboard
+- [docs/telemetry.md](docs/telemetry.md) — what is logged, what is never logged, and how to turn it off
 - [docs/troubleshooting.md](docs/troubleshooting.md) — when it does not work
 
 ## Contributing

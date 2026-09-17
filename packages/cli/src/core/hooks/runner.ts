@@ -20,6 +20,8 @@
 import type { Catalog, CatalogEntry } from "../catalog/types.js";
 import { resolveConfig, type ResolvedConfig } from "../config/resolve.js";
 import { route, type RouteResult } from "../router/route.js";
+import { eventsPath, type PathContext } from "../telemetry/paths.js";
+import { buildRouteEvent, isTelemetryDisabled, writeEvent } from "../telemetry/writer.js";
 import { DEFAULT_MAX_ENTRIES, DEFAULT_TTL_MS, loadCache, pruneCache, routeCacheKey, saveCache, cacheGet, cacheSet } from "./cache.js";
 import { DEGRADED_REMINDER, degradedReminder } from "./degrade.js";
 import { renderInjection } from "./render.js";
@@ -52,6 +54,10 @@ export interface HookDeps {
   routeFn?: typeof route;
   /** Route cache location. Defaults to `~/.cache/skillful/routes.json`. */
   cachePath?: string;
+  /** Telemetry log location. Defaults to the platform state directory. */
+  telemetryPath?: string;
+  /** Overrides platform detection for the telemetry path. Tests use it. */
+  platform?: NodeJS.Platform;
   now?: () => number;
 }
 
@@ -66,6 +72,46 @@ export interface HookOutcome {
   /** Human-readable reason, for `doctor` and telemetry. Never printed by the hook. */
   reason?: string;
   elapsedMs: number;
+}
+
+/**
+ * Record a routing event.
+ *
+ * Called **after** the payload has been decided, so nothing about it can extend the time the user
+ * waits for a decision. Every failure mode is swallowed inside `writeEvent`; this wrapper only
+ * decides whether to attempt a write at all.
+ *
+ * Prompt text is never passed here. The event carries a hash and a character count, which is enough
+ * to correlate a later observation and not enough to read what the user typed.
+ */
+function recordRoute(
+  result: RouteResult,
+  deps: HookDeps,
+  input: HookInput,
+  promptHash: string,
+  catalogFingerprint: string,
+): void {
+  if (isTelemetryDisabled(deps.env)) return;
+
+  const pathCtx: PathContext = {
+    homeDir: deps.homeDir,
+    env: deps.env,
+    ...(deps.platform === undefined ? {} : { platform: deps.platform }),
+  };
+
+  writeEvent(
+    buildRouteEvent({
+      result,
+      runtime: input.hook_event_name === undefined ? "cli" : "hook",
+      sessionId: input.session_id ?? "unknown",
+      promptHash,
+      catalogFingerprint,
+    }),
+    {
+      filePath: deps.telemetryPath ?? eventsPath(pathCtx),
+      now: () => new Date(),
+    },
+  );
 }
 
 /**
@@ -118,6 +164,7 @@ export async function runHook(input: HookInput, deps: HookDeps): Promise<HookOut
 
     const cachePath = deps.cachePath ?? defaultCachePath(deps.homeDir);
     const key = routeCacheKey(prompt, catalog.fingerprint);
+    const promptHash = key.slice(0, 32);
 
     // Cache first: a hit costs a file read instead of a round trip, which is the difference
     // between a 5ms hook and a 700ms one.
@@ -125,13 +172,15 @@ export async function runHook(input: HookInput, deps: HookDeps): Promise<HookOut
     const cached = cacheGet(store, key, { ttlMs: DEFAULT_TTL_MS, now: now() });
     if (cached !== undefined) {
       const text = renderInjection(cached);
-      return {
+      const outcome: HookOutcome = {
         payload: text === null ? {} : injectionPayload(event, text),
         result: cached,
         cacheHit: true,
         degraded: false,
         elapsedMs: now() - startedAt,
       };
+      recordRoute(cached, deps, input, promptHash, catalog.fingerprint);
+      return outcome;
     }
 
     const result = await (deps.routeFn ?? route)(prompt, {
@@ -153,7 +202,7 @@ export async function runHook(input: HookInput, deps: HookDeps): Promise<HookOut
     }
 
     if (result.decision.kind === "degraded") {
-      return {
+      const outcome: HookOutcome = {
         payload: injectionPayload(event, degradedReminder()),
         result,
         cacheHit: false,
@@ -161,16 +210,20 @@ export async function runHook(input: HookInput, deps: HookDeps): Promise<HookOut
         reason: result.decision.reason,
         elapsedMs: now() - startedAt,
       };
+      recordRoute(result, deps, input, promptHash, catalog.fingerprint);
+      return outcome;
     }
 
     const text = renderInjection(result);
-    return {
+    const outcome: HookOutcome = {
       payload: text === null ? {} : injectionPayload(event, text),
       result,
       cacheHit: false,
       degraded: false,
       elapsedMs: now() - startedAt,
     };
+    recordRoute(result, deps, input, promptHash, catalog.fingerprint);
+    return outcome;
   } catch (error) {
     // The last line of defence. Reaching here means a bug, and the user still gets a working
     // agent: no output, exit 0, nothing on stderr.

@@ -186,3 +186,77 @@ export { installPi, uninstallPi } from "./hooks/installers/pi.js";
 export { installOmp, uninstallOmp } from "./hooks/installers/omp.js";
 export { extensionSource } from "./hooks/installers/extension-source.js";
 export type { InstallContext, InstallOutcome, UninstallOutcome } from "./hooks/installers/types.js";
+
+// ---------------------------------------------------------------------------
+// Telemetry
+// ---------------------------------------------------------------------------
+export {
+  isTelemetryDisabled,
+  TELEMETRY_DISABLE_ENV,
+  buildCapabilityUsedEvent,
+  buildRouteEvent,
+  logSize,
+  writeEvent,
+} from "./telemetry/writer.js";
+export type { WriteOptions } from "./telemetry/writer.js";
+export {
+  MAX_CANDIDATE_IDS,
+  MAX_LINE_BYTES,
+  MAX_RANKING_ENTRIES,
+  ROUTE_DECISIONS,
+  SCHEMA_VERSION,
+  USAGE_SOURCES,
+  isTelemetryEvent,
+} from "./telemetry/events.js";
+export type {
+  CapabilityUsedEvent,
+  RankingEntry,
+  RouteEvent,
+  TelemetryEvent,
+  UsageSource,
+} from "./telemetry/events.js";
+export { readEvents, routeEvents, usageEvents } from "./telemetry/reader.js";
+export type { ReadOptions, ReadResult } from "./telemetry/reader.js";
+export {
+  APP_DIR_NAME,
+  EVENTS_FILE_NAME,
+  defaultReportPath,
+  eventsPath,
+  rotatedEventsPath,
+  stateDir,
+} from "./telemetry/paths.js";
+export type { PathContext } from "./telemetry/paths.js";
+export {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_ROTATED,
+  DEFAULT_RETENTION_DAYS,
+  MAINTENANCE_INTERVAL,
+  maintain,
+  rotatedPaths,
+} from "./telemetry/retention.js";
+export type { RetentionOptions, RetentionResult } from "./telemetry/retention.js";
+export { ACCEPTANCE_WINDOW_MS, matchUsage, summarise } from "./telemetry/aggregate.js";
+export type {
+  AdoptionStats,
+  CandidateStat,
+  OperationalStats,
+  OverviewStats,
+  TelemetrySummary,
+} from "./telemetry/aggregate.js";
+export {
+  barChart,
+  confusionTable,
+  escapeHtml,
+  formatNumber,
+  formatRate,
+  histogram,
+  latencyBuckets,
+} from "./telemetry/charts.js";
+export { loadBenchOutcome, redactReport, renderDashboard } from "./telemetry/dashboard.js";
+export type { BenchOutcome, DashboardInput } from "./telemetry/dashboard.js";
+
+// ---------------------------------------------------------------------------
+// Redaction
+// ---------------------------------------------------------------------------
+export { redactText, redactValue, redactedEnvNames } from "./redact.js";
+export type { RedactOptions } from "./redact.js";

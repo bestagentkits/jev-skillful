@@ -52,9 +52,17 @@ const HOME_PATH_PATTERNS: readonly RegExp[] = [
   /[A-Za-z]:\\Users\\[A-Za-z0-9._-]+/g,
 ];
 
-/** Filesystem paths that are not under a home directory but still identify a machine. */
+/**
+ * Filesystem paths that are not under a home directory but still identify a machine.
+ *
+ * Spaces are allowed and the match runs to a line, quote or bracket boundary. A pattern that stops
+ * at whitespace only redacts the first word of `~/Library/Application Support/...` and leaves the
+ * rest, which reads as a mangled path and is a weaker guarantee than it looks. Over-matching is the
+ * safer direction here: the cost is a clumsy-looking report, and the cost of under-matching is a
+ * machine identifier in a file the user was told was safe to share.
+ */
 const ABSOLUTE_PATH_PATTERN =
-  /\/(?:private|var|opt|srv|mnt|Volumes|tmp|etc|Applications|Library)\/[^\s"'`)\]}]*/g;
+  /\/(?:private|var|opt|srv|mnt|Volumes|tmp|etc|Applications|Library|usr|bin)\b[^\n"'`)\]}]*/g;
 
 /** Credentials embedded in a URL: `https://user:pass@host`. */
 const URL_CREDENTIAL_PATTERN = /(\/\/)[^/\s:@]+(:[^/\s@]*)?@/g;

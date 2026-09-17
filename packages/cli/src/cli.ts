@@ -6,6 +6,7 @@ import { evalCommand } from "./commands/eval.js";
 import { exportCaseCommand } from "./commands/export-case.js";
 import { hookCommand } from "./commands/hook.js";
 import { installCommand, uninstallCommand } from "./commands/install.js";
+import { reportCommand, telemetryCommand } from "./commands/report.js";
 import { routeCommand } from "./commands/route.js";
 
 const USAGE = `skillful — capability router for coding agents
@@ -16,6 +17,9 @@ Usage:
   skillful doctor [options]         Report whether the hook actually works
   skillful hook                      Hook entry point. Reads event JSON on stdin
   skillful export-case [options]     Export a redacted routing case for a bug report
+  skillful report [options]          Write a self-contained HTML report
+  skillful dashboard [options]       Write the report to its default path and open it
+  skillful telemetry [options]       Show or explain the telemetry switch
   skillful catalog [options]        List every capability found on this machine
   skillful route --prompt <text>    Decide which capability a prompt needs
   skillful eval [options]           Score the router against an eval fixture set
@@ -139,6 +143,39 @@ export async function run(argv: readonly string[]): Promise<number> {
     // No flags and no error path. This command is called by an agent runtime on every prompt,
     // so it always exits 0 and always writes exactly one JSON object to stdout.
     return hookCommand({ stdin: await readStdinRaw() });
+  }
+
+  if (command === "report" || command === "dashboard") {
+    const parsed = parseReportFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    return reportCommand({
+      ...(parsed.html === undefined ? {} : { html: parsed.html }),
+      ...(parsed.maxBytes === undefined ? {} : { maxBytes: parsed.maxBytes }),
+      includePrompts: parsed.includePrompts,
+      json: parsed.json,
+      // The dashboard variant is the same command with a default path and a browser.
+      open: command === "dashboard" ? true : parsed.open,
+    });
+  }
+
+  if (command === "telemetry") {
+    const parsed = parseTelemetryFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    return telemetryCommand(parsed.set === undefined ? {} : { set: parsed.set });
   }
 
   if (command === "catalog") {
@@ -503,6 +540,83 @@ function parseDoctorFlags(argv: readonly string[]): ParsedDoctorFlags {
   for (const arg of argv) {
     if (arg === "--json") out.json = true;
     else if (arg === "--offline") out.offline = true;
+    else if (arg === "-h" || arg === "--help") out.help = true;
+    else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// report / dashboard / telemetry
+// ---------------------------------------------------------------------------
+
+interface ParsedReportFlags {
+  html?: string;
+  maxBytes?: number;
+  open: boolean;
+  includePrompts: boolean;
+  json: boolean;
+  help: boolean;
+  error?: string;
+}
+
+function parseReportFlags(argv: readonly string[]): ParsedReportFlags {
+  const out: ParsedReportFlags = {
+    open: false,
+    includePrompts: false,
+    json: false,
+    help: false,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
+
+    if (arg === "--open") out.open = true;
+    else if (arg === "--json") out.json = true;
+    else if (arg === "--include-prompts") out.includePrompts = true;
+    else if (arg === "-h" || arg === "--help") out.help = true;
+    else if (arg === "--html" || arg === "--max-bytes") {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        out.error = `Missing value for ${arg}`;
+        return out;
+      }
+      i += 1;
+      if (arg === "--html") out.html = value;
+      else {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+          out.error = `${arg} expects a positive number, got ${value}`;
+          return out;
+        }
+        out.maxBytes = Math.floor(numeric);
+      }
+    } else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
+  return out;
+}
+
+interface ParsedTelemetryFlags {
+  set?: "enable" | "disable";
+  help: boolean;
+  error?: string;
+}
+
+function parseTelemetryFlags(argv: readonly string[]): ParsedTelemetryFlags {
+  const out: ParsedTelemetryFlags = { help: false };
+
+  for (const arg of argv) {
+    if (arg === "--disable") out.set = "disable";
+    else if (arg === "--enable") out.set = "enable";
     else if (arg === "-h" || arg === "--help") out.help = true;
     else {
       out.error = `Unknown option: ${arg}`;
