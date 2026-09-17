@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/bestagentkits/jev-skillful/discussions
+    about: For "how do I", "would this work for", and design talks.
+  - name: Security report
+    url: https://github.com/bestagentkits/jev-skillful/security/advisories/new
+    about: Report vulnerabilities privately, not in a public issue.

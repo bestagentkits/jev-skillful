@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Skillful — capability router for coding agents</title>
+    <meta
+      name="description"
+      content="Skillful watches your prompts, decides whether a skill, MCP server or subagent you already have is relevant, and injects at most one suggestion. Bring your own TypeSafe key; no server, no telemetry."
+    />
+    <link rel="canonical" href="https://skillful.agentkit.best/" />
+
+    <!-- Social preview. No third-party script, no external font, no analytics. -->
+    <meta property="og:title" content="Skillful — capability router for coding agents" />
+    <meta
+      property="og:description"
+      content="One suggestion per prompt, chosen from the capabilities you already installed. Bring your own TypeSafe key."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://skillful.agentkit.best/" />
+
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #16181d;
+        --muted: #5c6270;
+        --line: #e3e6ec;
+        --accent: #2b5bd7;
+        --code-bg: #f5f6f9;
+        --warn-bg: #fdf6e3;
+        --warn-line: #d9c48a;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e1013;
+          --fg: #e8eaef;
+          --muted: #9aa2b1;
+          --line: #262b33;
+          --accent: #7aa2f7;
+          --code-bg: #161a20;
+          --warn-bg: #221d10;
+          --warn-line: #5c4c22;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+      }
+
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 4rem 1.25rem 6rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin: 0 0 0.75rem;
+        letter-spacing: -0.02em;
+      }
+
+      h2 {
+        font-size: 1.15rem;
+        margin: 2.75rem 0 0.75rem;
+        letter-spacing: -0.01em;
+      }
+
+      p,
+      li {
+        color: var(--fg);
+      }
+
+      .lede {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin: 0 0 2rem;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code {
+        background: var(--code-bg);
+        padding: 0.12em 0.35em;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 1rem;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+
+      pre code {
+        background: none;
+        padding: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .warn {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-line);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1.5rem 0;
+      }
+
+      .warn h2 {
+        margin-top: 0;
+      }
+
+      footer {
+        margin-top: 4rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .links a {
+        margin-right: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Skillful</h1>
+      <p class="lede">
+        A capability router for coding agents. It watches your prompts, decides
+        whether a skill, MCP server, subagent or command you already installed is
+        relevant, and injects at most one suggestion.
+      </p>
+
+      <pre><code>npx skillful install</code></pre>
+
+      <p>
+        You bring your own <code>TYPESAFE_API_KEY</code>. There is no server, no
+        account, and nothing is collected. The only network call Skillful makes is
+        the routing request to <code>api.typesafe.ai</code>.
+      </p>
+
+      <h2>Why this exists</h2>
+      <p>
+        The usual way to make an agent aware of a skill is to list every skill in
+        the context window. That does not scale. The paper
+        <a href="https://arxiv.org/abs/2604.24594"
+          >Skill Retrieval Augmentation for Agentic AI</a
+        >
+        found that as a skill corpus grows, context budget is consumed quickly and
+        the agent becomes <em>less</em> accurate at picking the right skill. The
+        same work found agents load skills at a similar rate whether or not the task
+        needs one, so the problem is both which capability and whether to load one.
+      </p>
+      <p>
+        A development machine here has around 230 skills across two runtimes, plus
+        MCP servers, subagents and commands.
+      </p>
+
+      <h2>How it works</h2>
+      <p>
+        A local scan builds a shortlist of about fifteen candidates with BM25 and
+        per-kind quotas, with no tokens spent. One TypeSafe request then asks a
+        single <code>choice</code> question over that shortlist plus
+        <code>none</code>. At most one primary suggestion and two runner-ups are
+        injected, and a prompt that needs nothing gets nothing.
+      </p>
+      <p>
+        The shortlist is what the model sees, not what gets injected. Injecting all
+        fifteen would reproduce the exact pattern that made retrieval necessary.
+      </p>
+
+      <h2>What is measured</h2>
+      <p>
+        Routing quality is measured against 67 development fixtures and 22 holdout
+        fixtures over a 533-entry corpus:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Result</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>recall@K</code> (development)</td>
+            <td>0.824</td>
+            <td>0.90</td>
+          </tr>
+          <tr>
+            <td><code>recall@K</code> (holdout)</td>
+            <td>0.600</td>
+            <td>0.90</td>
+          </tr>
+          <tr>
+            <td><code>top1Accuracy</code></td>
+            <td>0.731</td>
+            <td>0.80</td>
+          </tr>
+          <tr>
+            <td><code>noneF1</code></td>
+            <td>0.813</td>
+            <td>0.80</td>
+          </tr>
+          <tr>
+            <td>agreement rate</td>
+            <td>0.985</td>
+            <td>0.90</td>
+          </tr>
+          <tr>
+            <td>p95 route latency</td>
+            <td>406ms</td>
+            <td>1500ms</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="warn">
+        <h2>The target is not met, and the gap is not a tuning problem</h2>
+        <p>
+          Recall depends only on the shortlist, which BM25 and the quotas build
+          entirely, so it can be swept with no API calls. Growing the shortlist from
+          13 entries to 21 raised recall from 0.600 to 0.650. It saturates because
+          BM25 matches tokens: it finds a capability only when a prompt happens to
+          share vocabulary with a capability description, and prompts are phrased as
+          tasks while descriptions are phrased as capability statements. Closing the
+          gap needs a different retrieval stage, not a different parameter.
+        </p>
+        <p>
+          <strong>The outcome benchmark does not exist yet.</strong> Whether
+          injecting a suggestion makes an agent complete a task better is the
+          question that matters, and it is not answered. Until it is, this project
+          claims a routing improvement and makes no claim about task outcomes.
+        </p>
+      </div>
+
+      <h2>What it does reliably</h2>
+      <ul>
+        <li>
+          Installs for Claude Code, Codex, Pi and OMP, idempotently, with a
+          timestamped backup before any file is modified, and removes exactly what
+          it added.
+        </li>
+        <li>Leaves other tools' hooks untouched.</li>
+        <li>
+          Fails open. A missing key, dead network, upstream error or expired budget
+          each inject one reminder line and exit 0. Nothing is written to stderr.
+        </li>
+        <li>
+          A cold route took 1446ms against a 2000ms budget; a repeated prompt hit
+          the cache in 221ms.
+        </li>
+      </ul>
+
+      <h2>Commands</h2>
+      <pre><code>npx skillful install       # install the hook for every runtime present
+npx skillful doctor        # is it working? includes a live trial route
+npx skillful uninstall     # remove it, leaving other hooks alone
+
+npx skillful catalog --summary        # what was found
+npx skillful route --prompt "..." --explain
+npx skillful eval --recall-only       # offline quota sweep, no key, no cost
+npx skillful export-case --prompt "..."  # redacted case for a bug report</code></pre>
+
+      <h2>Documentation</h2>
+      <p class="links">
+        <a href="https://github.com/bestagentkits/jev-skillful/blob/main/docs/install.md"
+          >Install</a
+        >
+        <a href="https://github.com/bestagentkits/jev-skillful/blob/main/docs/architecture.md"
+          >Architecture</a
+        >
+        <a href="https://github.com/bestagentkits/jev-skillful/blob/main/docs/routing.md"
+          >Routing</a
+        >
+        <a href="https://github.com/bestagentkits/jev-skillful/blob/main/docs/evaluation.md"
+          >Evaluation</a
+        >
+        <a href="https://github.com/bestagentkits/jev-skillful/blob/main/docs/troubleshooting.md"
+          >Troubleshooting</a
+        >
+      </p>
+
+      <footer>
+        <p>
+          <a href="https://github.com/bestagentkits/jev-skillful">GitHub</a> ·
+          MIT licensed. No tracking on this page, no external assets, no
+          third-party scripts.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+name: Install or hook problem
+description: >-
+  The hook did not install, does not fire, or broke something in
+  your agent.
+labels: ["install"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with `npx skillful doctor`. It reports whether a key
+        is present, which runtimes have a hook, how many
+        capabilities were found, and it runs one real route so you
+        can see the latency. Its output answers most of these
+        reports on its own.
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `npx skillful doctor`
+      description: |
+        This is redacted by construction: it prints configuration
+        sources, counts, and the one line that would be injected.
+        It does not print your key.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Which runtime
+      options:
+        - Claude Code
+        - Codex
+        - Pi
+        - OMP
+        - The CLI directly
+    validations:
+      required: true
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: What happens
+      description: |
+        For example: the hook never fires; the reminder line
+        appears on every prompt; the agent refuses to start; a
+        settings file was modified in a way you did not expect.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Skillful version
+      description: Output of `npx skillful --version`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Did install modify a file unexpectedly?
+      description: |
+        Optional. Every modification is preceded by a timestamped
+        backup, so if a settings file was touched you can compare
+        it with `<file>.bak.skillful.<timestamp>` and paste the
+        diff. Please do not paste a settings file in full.
+      render: diff
+    validations:
+      required: false

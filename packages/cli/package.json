@@ -1,16 +1,39 @@
 {
   "name": "skillful",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "description": "Per-prompt capability router for coding agents",
+  "description": "Per-prompt capability router for coding agents. Injects at most one relevant skill, MCP server, subagent or command into your agent's context.",
   "license": "MIT",
   "bin": {
     "skillful": "./dist/bin.js"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "engines": {
     "node": ">=20"
+  },
+  "keywords": [
+    "agent",
+    "skills",
+    "mcp",
+    "routing",
+    "retrieval",
+    "claude-code",
+    "codex",
+    "pi",
+    "llm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bestagentkits/jev-skillful.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/bestagentkits/jev-skillful/issues"
+  },
+  "homepage": "https://skillful.agentkit.best",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsc -b tsconfig.build.json",

@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write # Required for npm provenance.
+
+jobs:
+  publish:
+    name: publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # A release must not publish something that does not pass
+      # its own tests.
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      # Provenance lets a user verify that the published package
+      # was built from this commit by this workflow. It is the
+      # only defence a consumer has against a tampered artefact.
+      - name: Publish with provenance
+        run: |
+          pnpm --filter skillful publish \
+            --provenance --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            See CHANGELOG.md for what changed.
+
+            Install: `npx skillful install`
+
+            Skillful reads `TYPESAFE_API_KEY` from the
+            environment and never stores it. It makes exactly one
+            kind of network call, to `api.typesafe.ai`.

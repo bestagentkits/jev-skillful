@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege. Nothing in this workflow writes to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      # The CLI must work from a clean directory with no manual
+      # step. This runs the built binary, not the source, because
+      # that is what a user gets from npm.
+      - name: Smoke test the built CLI
+        run: |
+          BIN="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
+          cd "$(mktemp -d)"
+          node "$BIN" --version
+          node "$BIN" doctor --offline --json | head -20
+
+      # No secret is available here, and none is needed: the hook
+      # must degrade cleanly rather than fail.
+      - name: The hook must fail open without a key
+        run: |
+          BIN="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
+          OUT=$(echo '{"prompt":"refactor the auth middleware"}' \
+            | node "$BIN" hook)
+          STATUS=$?
+          echo "$OUT"
+          # SC2320: the exit status must be read before anything
+          # else runs, or it reports the previous command instead.
+          test "$STATUS" -eq 0
+          echo "$OUT" | grep -q 'hookSpecificOutput'

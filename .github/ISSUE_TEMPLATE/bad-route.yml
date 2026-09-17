@@ -1,0 +1,71 @@
+name: Bad routing decision
+description: >-
+  Skillful suggested the wrong capability, or suggested one when
+  it should not have.
+labels: ["bad-route"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Routing quality depends on
+        real cases, so this is the most useful issue you can open.
+
+        Before filling this in, run:
+
+        ```bash
+        npx skillful export-case --prompt "the prompt that routed wrong"
+        ```
+
+        It prints the decision, the shortlist and the scores, with
+        every filesystem path, environment value and
+        credential-shaped string removed. Paste that block below.
+        It is redacted by default, so you do not need to review it
+        for secrets, though you are welcome to.
+
+  - type: textarea
+    id: case
+    attributes:
+      label: Exported case
+      description: Output of `skillful export-case`. Paste it whole.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+      description: |
+        Which capability should have been suggested, or should
+        nothing have been suggested? Give the capability's name as
+        your agent refers to it, for example `ak-backend-development`.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Skillful version
+      description: Output of `npx skillful --version`.
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: Agent runtime
+      description: Claude Code, Codex, Pi, OMP, or the CLI directly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: |
+        Optional. If you ran
+        `skillful route --prompt "..." --explain`, its output helps
+        too, since it shows the shortlist and the BM25 scores
+        behind the decision.
+    validations:
+      required: false

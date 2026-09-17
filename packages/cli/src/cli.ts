@@ -3,6 +3,7 @@ import type { CatalogKind, CatalogRuntime } from "./core/index.js";
 import { catalogCommand } from "./commands/catalog.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { evalCommand } from "./commands/eval.js";
+import { exportCaseCommand } from "./commands/export-case.js";
 import { hookCommand } from "./commands/hook.js";
 import { installCommand, uninstallCommand } from "./commands/install.js";
 import { routeCommand } from "./commands/route.js";
@@ -14,6 +15,7 @@ Usage:
   skillful uninstall [options]      Remove the Skillful hook, leaving other hooks alone
   skillful doctor [options]         Report whether the hook actually works
   skillful hook                      Hook entry point. Reads event JSON on stdin
+  skillful export-case [options]     Export a redacted routing case for a bug report
   skillful catalog [options]        List every capability found on this machine
   skillful route --prompt <text>    Decide which capability a prompt needs
   skillful eval [options]           Score the router against an eval fixture set
@@ -70,7 +72,7 @@ Configuration file:
   ~/.config/skillful/config.json   Thresholds and quota groups. Never a credential.
 `;
 
-export const VERSION = "0.0.0";
+export const VERSION = "0.1.0";
 
 /** Dispatch a parsed command line. Returns the process exit code. */
 export async function run(argv: readonly string[]): Promise<number> {
@@ -114,6 +116,23 @@ export async function run(argv: readonly string[]): Promise<number> {
       return 0;
     }
     return doctorCommand({ json: parsed.json, offline: parsed.offline });
+  }
+
+  if (command === "export-case") {
+    const parsed = parseExportCaseFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    return exportCaseCommand({
+      ...(parsed.prompt === undefined ? {} : { prompt: parsed.prompt }),
+      ...(parsed.hash === undefined ? {} : { hash: parsed.hash }),
+      json: parsed.json,
+    });
   }
 
   if (command === "hook") {
@@ -385,6 +404,43 @@ function parseEvalFlags(argv: readonly string[]): ParsedEvalFlags {
   if (out.record !== undefined && out.replay !== undefined) {
     out.error = "--record and --replay cannot be used together";
   }
+  return out;
+}
+
+interface ParsedExportCaseFlags {
+  prompt?: string;
+  hash?: string;
+  json: boolean;
+  help: boolean;
+  error?: string;
+}
+
+function parseExportCaseFlags(argv: readonly string[]): ParsedExportCaseFlags {
+  const out: ParsedExportCaseFlags = { json: false, help: false };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
+
+    if (arg === "--json") {
+      out.json = true;
+    } else if (arg === "-h" || arg === "--help") {
+      out.help = true;
+    } else if (arg === "--prompt" || arg === "--hash") {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        out.error = `Missing value for ${arg}`;
+        return out;
+      }
+      i += 1;
+      if (arg === "--prompt") out.prompt = value;
+      else out.hash = value;
+    } else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
   return out;
 }
 
