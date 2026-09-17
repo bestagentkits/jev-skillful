@@ -35,6 +35,10 @@ bench/out/
 sweep-*.json
 .vitest/
 
+# Copied from the root README at pack time so the npm package page has one.
+# Generated rather than source: editing it would be editing a copy.
+packages/cli/README.md
+
 # ---------------------------------------------------------------------------
 # Editors and OS
 # ---------------------------------------------------------------------------

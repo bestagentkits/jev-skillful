@@ -6,9 +6,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+# contents: write is for the GitHub release.
+# id-token: write is what lets npm verify this workflow's
+# identity through OIDC, so that no long-lived publish token
+# exists to be stolen, leaked in a log, or left in a secret.
 permissions:
   contents: write
-  id-token: write # Required for npm provenance.
+  id-token: write
 
 jobs:
   publish:
@@ -16,6 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Nothing after checkout needs git credentials, and
+          # leaving them in .git/config gives any later step a
+          # token it has no use for.
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
         with:
@@ -23,27 +32,63 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.x
           cache: pnpm
-          registry-url: https://registry.npmjs.org
+
+      # Two version floors gate trusted publishing: npm
+      # 11.5.1 and Node 22.14.0. setup-node ships npm 10.x
+      # with Node 22, and an npm below the floor does not fail
+      # loudly. It skips the OIDC exchange and then errors out
+      # somewhere less informative, which is why the version is
+      # asserted rather than assumed.
+      - name: Ensure a publish-capable npm
+        run: |
+          npm install -g npm@11
+          NPM_V=$(npm --version)
+          echo "npm ${NPM_V}"
+          MIN=11.5.1
+          LOW=$(printf '%s\n%s\n' "$MIN" "$NPM_V" \
+            | sort -V | head -1)
+          if [ "$LOW" != "$MIN" ]; then
+            echo "npm ${MIN} or newer is required, got ${NPM_V}"
+            exit 1
+          fi
 
       - run: pnpm install --frozen-lockfile
 
-      # A release must not publish something that does not pass
-      # its own tests.
+      # A release must not publish something that does not
+      # pass its own tests.
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
 
-      # Provenance lets a user verify that the published package
-      # was built from this commit by this workflow. It is the
-      # only defence a consumer has against a tampered artefact.
+      # npm shows the package README on the registry page, and
+      # npm reads it from the package directory. The project
+      # keeps one README at the root, so it is copied in at
+      # pack time rather than duplicated and left to drift.
+      - name: Give the package a README
+        run: cp README.md packages/cli/README.md
+
+      - name: Build the tarball
+        run: |
+          cd packages/cli
+          pnpm pack --pack-destination "$RUNNER_TEMP"
+
+      # npm publish, deliberately, not pnpm publish. pnpm 11
+      # implements publishing itself and has open bugs in the
+      # OIDC path: it bails out as soon as a static
+      # _authToken is present (pnpm#11496) and has been
+      # reported to fail with a 404 on pnpm 11 (pnpm#11513).
+      # Packing with pnpm and publishing with npm uses the
+      # client the registry actually tests against.
+      #
+      # --provenance records that this artefact was built from
+      # this commit by this workflow. It is the only evidence a
+      # consumer has that the package was not tampered with.
       - name: Publish with provenance
         run: |
-          pnpm --filter @mrgoonie/skillful publish \
-            --provenance --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish "$RUNNER_TEMP"/mrgoonie-skillful-*.tgz \
+            --access public --provenance
 
       - name: Create the GitHub release
         uses: softprops/action-gh-release@v2
@@ -55,5 +100,5 @@ jobs:
             Install: `npx @mrgoonie/skillful install`
 
             Skillful reads `TYPESAFE_API_KEY` from the
-            environment and never stores it. It makes exactly one
-            kind of network call, to `api.typesafe.ai`.
+            environment and never stores it. It makes exactly
+            one kind of network call, to `api.typesafe.ai`.
