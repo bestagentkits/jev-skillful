@@ -1,5 +1,6 @@
 import { CATALOG_KINDS, CATALOG_RUNTIMES } from "./core/index.js";
 import type { CatalogKind, CatalogRuntime } from "./core/index.js";
+import { benchCommand } from "./commands/bench.js";
 import { catalogCommand } from "./commands/catalog.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { evalCommand } from "./commands/eval.js";
@@ -20,6 +21,7 @@ Usage:
   skillful report [options]          Write a self-contained HTML report
   skillful dashboard [options]       Write the report to its default path and open it
   skillful telemetry [options]       Show or explain the telemetry switch
+  skillful bench [options]           Run the outcome benchmark (A/B, paired)
   skillful catalog [options]        List every capability found on this machine
   skillful route --prompt <text>    Decide which capability a prompt needs
   skillful eval [options]           Score the router against an eval fixture set
@@ -143,6 +145,30 @@ export async function run(argv: readonly string[]): Promise<number> {
     // No flags and no error path. This command is called by an agent runtime on every prompt,
     // so it always exits 0 and always writes exactly one JSON object to stdout.
     return hookCommand({ stdin: await readStdinRaw() });
+  }
+
+  if (command === "bench") {
+    const parsed = parseBenchFlags(rest);
+    if (parsed.error !== undefined) {
+      process.stderr.write(`${parsed.error}\n\n${USAGE}`);
+      return 1;
+    }
+    if (parsed.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+    return benchCommand({
+      repeat: parsed.repeat,
+      pilot: parsed.pilot,
+      probe: parsed.probe,
+      dryRun: parsed.dryRun,
+      json: parsed.json,
+      ...(parsed.suite === undefined ? {} : { suite: parsed.suite }),
+      ...(parsed.tasks === undefined ? {} : { tasks: parsed.tasks }),
+      ...(parsed.runtime === undefined ? {} : { runtime: parsed.runtime }),
+      ...(parsed.outDir === undefined ? {} : { outDir: parsed.outDir }),
+      ...(parsed.maxTasks === undefined ? {} : { maxTasks: parsed.maxTasks }),
+    });
   }
 
   if (command === "report" || command === "dashboard") {
@@ -547,6 +573,82 @@ function parseDoctorFlags(argv: readonly string[]): ParsedDoctorFlags {
     }
   }
 
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// bench
+// ---------------------------------------------------------------------------
+
+interface ParsedBenchFlags {
+  suite?: string;
+  tasks?: string[];
+  repeat: number;
+  pilot: boolean;
+  probe: boolean;
+  runtime?: string;
+  outDir?: string;
+  maxTasks?: number;
+  dryRun: boolean;
+  json: boolean;
+  help: boolean;
+  error?: string;
+}
+
+function parseBenchFlags(argv: readonly string[]): ParsedBenchFlags {
+  const out: ParsedBenchFlags = {
+    repeat: 1,
+    pilot: false,
+    probe: false,
+    dryRun: false,
+    json: false,
+    help: false,
+  };
+  const tasks: string[] = [];
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
+
+    if (arg === "--pilot") out.pilot = true;
+    else if (arg === "--probe") out.probe = true;
+    else if (arg === "--dry-run") out.dryRun = true;
+    else if (arg === "--json") out.json = true;
+    else if (arg === "-h" || arg === "--help") out.help = true;
+    else if (
+      arg === "--suite" ||
+      arg === "--task" ||
+      arg === "--runtime" ||
+      arg === "--out" ||
+      arg === "--max-tasks" ||
+      arg === "--repeat"
+    ) {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        out.error = `Missing value for ${arg}`;
+        return out;
+      }
+      i += 1;
+      if (arg === "--suite") out.suite = value;
+      else if (arg === "--task") tasks.push(value);
+      else if (arg === "--runtime") out.runtime = value;
+      else if (arg === "--out") out.outDir = value;
+      else {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric < 1) {
+          out.error = `${arg} expects a positive number, got ${value}`;
+          return out;
+        }
+        if (arg === "--max-tasks") out.maxTasks = Math.floor(numeric);
+        else out.repeat = Math.floor(numeric);
+      }
+    } else {
+      out.error = `Unknown option: ${arg}`;
+      return out;
+    }
+  }
+
+  if (tasks.length > 0) out.tasks = tasks;
   return out;
 }
 
