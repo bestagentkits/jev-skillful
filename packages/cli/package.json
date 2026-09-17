@@ -1,0 +1,23 @@
+{
+  "name": "skillful",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Per-prompt capability router for coding agents",
+  "license": "MIT",
+  "bin": {
+    "skillful": "./dist/bin.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.."
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.3"
+  }
+}

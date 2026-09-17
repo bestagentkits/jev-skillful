@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "//": "Build configuration: same settings as tsconfig.json but without test files, so nothing test-related is emitted into dist.",
+  "exclude": ["src/**/*.test.ts"]
+}

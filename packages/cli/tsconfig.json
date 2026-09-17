@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "//": "Includes test files so the editor analyses them inside the project and gives them the same `types` and lib settings as the rest of the source. The build uses tsconfig.build.json, which excludes them from the emitted output.",
+  "include": ["src/**/*.ts"]
+}

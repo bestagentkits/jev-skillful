@@ -33,6 +33,7 @@ coverage/
 .skillful/
 bench/out/
 sweep-*.json
+.vitest/
 
 # ---------------------------------------------------------------------------
 # Editors and OS
