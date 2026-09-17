@@ -85,13 +85,17 @@ there is no shared vocabulary to match on. And MCP retrieval cannot be measured 
 sanitised corpus, because an MCP entry's catalog description is the transport string read from a
 config file, which after redaction carries no retrievable text.
 
-**The outcome benchmark does not exist yet.** Whether injecting a suggestion actually makes an
-agent complete a task better is a separate and harder question, and it is the one that matters. It
-requires comparing outcomes on the same task with and without injection, over a real repository, in
-a frozen container, with a paired analysis on the subset of tasks where injection actually
-happened. That work is phase 7 of the plan. Until it reports, this project claims a routing
-improvement and **does not claim a task-outcome improvement**. Any use of the words "makes your
-agent better" here would be unsupported.
+**The outcome benchmark harness is built, and the benchmark has not been run.** Whether injecting a
+suggestion actually makes an agent complete a task better is the question that matters, and it is
+unanswered. The harness is complete — real SWE-bench tasks, frozen Docker environments, a paired
+analysis tested against hand-computed answers — and no `bench-outcome.json` exists, because none was
+fabricated. Two of four runtimes cannot complete a headless run here: Claude Code's OAuth session has
+expired and Codex's quota resets on 2026-09-19.
+
+So the status is **not run**, which is not the same as `not-proven`. `not-proven` would mean the data
+was collected and the interval spans zero; here there is no interval at all. Until there is, this
+project claims a routing improvement and **makes no claim about task outcomes**. Any use of the words
+"makes your agent better" would be unsupported. See [docs/bench.md](docs/bench.md).
 
 A caution worth carrying: an earlier version of these numbers showed `recall@K` 0.804 on the
 development set. That figure was inflated. MCP descriptions contained private service URLs and
@@ -151,6 +155,7 @@ injects it. Read it at `~/.pi/agent/extensions/skillful/index.ts` before trustin
 - [docs/evaluation.md](docs/evaluation.md) — how the router is measured, and the results
 - [docs/measurement.md](docs/measurement.md) — the three layers, RAE, and how to read the dashboard
 - [docs/telemetry.md](docs/telemetry.md) — what is logged, what is never logged, and how to turn it off
+- [docs/bench.md](docs/bench.md) — the outcome benchmark, its evidence threshold, and its status
 - [docs/troubleshooting.md](docs/troubleshooting.md) — when it does not work
 
 ## Contributing

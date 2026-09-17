@@ -78,7 +78,7 @@ Configuration file:
   ~/.config/skillful/config.json   Thresholds and quota groups. Never a credential.
 `;
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 
 /** Dispatch a parsed command line. Returns the process exit code. */
 export async function run(argv: readonly string[]): Promise<number> {

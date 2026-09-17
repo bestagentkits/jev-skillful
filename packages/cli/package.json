@@ -1,13 +1,16 @@
 {
   "name": "skillful",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Per-prompt capability router for coding agents. Injects at most one relevant skill, MCP server, subagent or command into your agent's context.",
   "license": "MIT",
   "bin": {
     "skillful": "./dist/bin.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
